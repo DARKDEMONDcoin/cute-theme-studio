@@ -155,8 +155,17 @@ export default function SkillsSettingsPage() {
     reload();
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Delete this skill?")) return;
+  const handleDelete = async (id: string, name?: string) => {
+    const ok = await confirmDialog({
+      title: "Delete this skill?",
+      description: name
+        ? `"${name}" will be removed from your workspace. This can't be undone.`
+        : "This skill will be removed from your workspace. This can't be undone.",
+      confirmLabel: "Delete",
+      tone: "danger",
+    });
+    if (!ok) return;
+
     const { error } = await supabase.from("skills").delete().eq("id", id);
     if (error) {
       toast.error(sanitizeErrorMessage(error, "Something went wrong"));
