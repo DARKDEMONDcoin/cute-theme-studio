@@ -68,17 +68,6 @@ async function availableKeys(supabase: SupabaseClient): Promise<KeyRow[]> {
     });
 }
 
-async function markSuccess(supabase: SupabaseClient, key: KeyRow) {
-  await supabase
-    .from("manus_keys")
-    .update({
-      last_used_at: new Date().toISOString(),
-      success_count: 0 + 1 + (0 as number), // replaced below by rpc-less increment
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", key.id);
-}
-
 async function markFailure(
   supabase: SupabaseClient,
   key: KeyRow,
@@ -311,12 +300,14 @@ export async function handleComputerAgent(payload: ComputerPayload | null): Prom
       });
 
       if (!res.ok) {
+        const fail = res as UpstreamFail;
         const message =
-          res.status === 503
+          fail.status === 503
             ? "no_capacity"
-            : res.status === 429
+            : fail.status === 429
               ? "rate_limited"
               : "provider_error";
+
         await supabase
           .from("computer_tasks")
           .update({ status: "failed", error: message, updated_at: new Date().toISOString() })
@@ -450,5 +441,3 @@ async function listEvents(supabase: SupabaseClient, taskId: string) {
     .order("created_at", { ascending: true });
   return data ?? [];
 }
-
-export { markSuccess };

@@ -33,7 +33,7 @@ export function rowToMessage(
   const isFresh = createdAtMs > 0 && Date.now() - createdAtMs < 15 * 60 * 1000;
   const hasPendingJob = isFresh && !!(
     meta.chatJobId || meta.docsJobId || meta.slidesJobId ||
-    meta.operatorRunId || meta.researchJobId || hasMedia ||
+    meta.operatorRunId || meta.computerTaskId || meta.researchJobId || hasMedia ||
     meta.kind === "slidesPending" || meta.kind === "docsPending" || meta.kind === "researchPending"
   );
   const interrupted =
@@ -90,6 +90,7 @@ export function rowToMessage(
     docsJobId: meta.kind === "docsPending" ? meta.docsJobId : undefined,
     chatJobId: meta.kind === "researchPending" ? meta.chatJobId : undefined,
     operatorRunId: meta.kind === "operatorRun" ? meta.operatorRunId : undefined,
+    computerTaskId: meta.kind === "computerTask" ? meta.computerTaskId : undefined,
     researchJobId: meta.kind === "researchPlan" ? meta.researchJobId : undefined,
     // Restore media generation state (plan + per-scene results + merged video).
     mediaPlan: hasMedia ? meta.mediaPlan : undefined,
