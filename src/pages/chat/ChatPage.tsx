@@ -578,6 +578,20 @@ const ChatPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Agent picked from the model menu ("Agent" entry) — activate the Computer Agent.
+  useEffect(() => {
+    const onPick = (e: Event) => {
+      const id = (e as CustomEvent).detail?.id;
+      const agent = id ? getAgentById(id) : null;
+      if (!agent) return;
+      setChatMode("normal");
+      setSelectedAgent(agent);
+      setSelectedModel(null);
+    };
+    window.addEventListener("megsy:select-agent", onPick);
+    return () => window.removeEventListener("megsy:select-agent", onPick);
+  }, [setChatMode, setSelectedAgent, setSelectedModel]);
+
   const {
     videoStartEndMode,
     setVideoStartEndMode,
@@ -1831,10 +1845,22 @@ const ChatPage = () => {
       hiddenFromTranscript: isLearningAnswer,
     };
 
-    // ── Computer Agent: explicit @computer or auto-routed "needs a real computer" requests ──
+    // ── Computer Agent: explicit @computer / Agent pick, or auto-routed "needs a real computer" requests ──
     {
       const { shouldUseComputer } = await import("@/lib/computer/shouldUseComputer");
-      if (chatMode !== "operator" && shouldUseComputer(text)) {
+      const agentRequested = selectedAgent?.id === "computer";
+      if (chatMode !== "operator" && (agentRequested || shouldUseComputer(text))) {
+        const { canRunComputerTask, recordComputerTask, computerDailyLimit } = await import(
+          "@/lib/computer/usageLimits"
+        );
+        if (!canRunComputerTask(userPlan)) {
+          toast.error(
+            `Agent daily limit reached (${computerDailyLimit(userPlan)} tasks/day). Upgrade for more.`,
+          );
+          isSubmittingRef.current = false;
+          return;
+        }
+        recordComputerTask();
         try {
           await runComputerTurn({
             text,
@@ -3265,6 +3291,10 @@ const ChatPage = () => {
                 setSelectedAgent(agent || null);
                 setSelectedModel(null);
               },
+              mediaModel,
+              setMediaModel,
+              slidesTemplate,
+              setSlidesPickerOpen,
             }}
           />
 

@@ -11,6 +11,7 @@ import { BrandIcon, hasBrandIcon } from "@/components/chat/media/BrandIcon";
 import megsyIcon from "@/assets/megsy-icon-transparent.png";
 import { useUserPlan } from "@/hooks/useUserPlan";
 import { isFreeModel, isPaidUser } from "@/lib/subscriptionGating";
+import { filterImageModels, filterVideoModels } from "@/lib/mediaModelPolicy";
 
 
 
@@ -47,8 +48,8 @@ export default function MediaModelPickerSheet({
 
   const filtered = useMemo(() => {
     const target = mode === "video" ? ["video", "video-i2v"] : ["image"];
-    return models
-      .filter((m) => target.includes(m.type as string))
+    const scoped = models.filter((m) => target.includes(m.type as string));
+    return (mode === "video" ? filterVideoModels(scoped) : filterImageModels(scoped))
       .sort((a, b) => {
         const fa = a.isFeatured ? 1 : 0;
         const fb = b.isFeatured ? 1 : 0;
