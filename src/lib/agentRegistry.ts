@@ -73,6 +73,17 @@ export const AGENTS: AgentDef[] = [
 
 
 
+  {
+    id: "computer",
+    label: "Computer",
+    mention: "@computer",
+    icon: Bot,
+    color: "text-slate-300",
+    bg: "bg-slate-500/15",
+    description: "Full computer: browser, terminal, files & real tasks",
+    category: "chat",
+  },
+
   // File agents
   {
     id: "slides",
