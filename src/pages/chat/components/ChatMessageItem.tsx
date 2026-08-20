@@ -139,7 +139,11 @@ const ChatMessageItemImpl = ({
   const isStreamingThis = isLoading && isLastAssistant;
   const content = (
     <>
-      {msg.role === "assistant" && msg.operatorRunId ? (
+      {msg.role === "assistant" && msg.computerTaskId ? (
+        <Suspense fallback={null}>
+          <ComputerTaskCardLazy taskId={msg.computerTaskId} />
+        </Suspense>
+      ) : msg.role === "assistant" && msg.operatorRunId ? (
         <Suspense fallback={null}>
           <OperatorInlineBubbleLazy runId={msg.operatorRunId} onDismiss={dismissOperatorRun} />
         </Suspense>

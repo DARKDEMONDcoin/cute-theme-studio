@@ -82,6 +82,8 @@ export interface Message {
   docsJobId?: string;
   chatJobId?: string;
   operatorRunId?: string;
+  /** Live Computer Agent task rendered as an in-chat card. */
+  computerTaskId?: string;
   researchJobId?: string;
   videoJobId?: string;
   // Media generation (image/video) — plan card + per-scene results live on a
