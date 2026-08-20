@@ -2381,6 +2381,19 @@ const ChatPage = () => {
     sendWithTextRef.current = handleSendWithText;
   });
 
+  // Once the router's target mode is actually applied, re-send the original
+  // message through that service's normal flow.
+  useEffect(() => {
+    const pending = pendingAutoSendRef.current;
+    if (!pending || pending.mode !== chatMode) return;
+    pendingAutoSendRef.current = null;
+    const t = setTimeout(() => {
+      void sendWithTextRef.current?.(pending.text);
+    }, 0);
+    return () => clearTimeout(t);
+  }, [chatMode]);
+
+
   const handleSend = () => handleSendWithText();
 
   // Warm the modules the send path imports so the FIRST send is as fast as
