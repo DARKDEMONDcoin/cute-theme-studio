@@ -105,6 +105,8 @@ const resumeChatJobs = (...args: Parameters<typeof import("./services/resumeChat
   import("./services/resumeChatJobs").then((m) => m.resumeChatJobs(...args));
 const runOperatorTurn = (...args: Parameters<typeof import("./services/runOperatorTurn").runOperatorTurn>) =>
   import("./services/runOperatorTurn").then((m) => m.runOperatorTurn(...args));
+const runComputerTurn = (...args: Parameters<typeof import("./services/runComputerTurn").runComputerTurn>) =>
+  import("./services/runComputerTurn").then((m) => m.runComputerTurn(...args));
 const runMediaTurn = (...args: Parameters<typeof import("./services/runMediaTurn").runMediaTurn>) =>
   import("./services/runMediaTurn").then((m) => m.runMediaTurn(...args));
 const runSlidesTurn = (...args: Parameters<typeof import("./services/runSlidesTurn").runSlidesTurn>) =>
@@ -1828,6 +1830,30 @@ const ChatPage = () => {
       mode: chatMode,
       hiddenFromTranscript: isLearningAnswer,
     };
+
+    // ── Computer Agent: explicit @computer or auto-routed "needs a real computer" requests ──
+    {
+      const { shouldUseComputer } = await import("@/lib/computer/shouldUseComputer");
+      if (chatMode !== "operator" && shouldUseComputer(text)) {
+        try {
+          await runComputerTurn({
+            text,
+            userMsg,
+            localTurnId,
+            attachments: imageAttachments.map((f) => f.data),
+            setMessages,
+            setInput,
+            setAttachedFiles,
+            createOrUpdateConversation,
+            saveMessage,
+            ownInsertedIdsRef,
+          });
+        } finally {
+          isSubmittingRef.current = false;
+        }
+        return;
+      }
+    }
 
     // ── Operator mode: keep the normal chat flow; render operator output as the assistant reply ──
     if (chatMode === "operator") {
