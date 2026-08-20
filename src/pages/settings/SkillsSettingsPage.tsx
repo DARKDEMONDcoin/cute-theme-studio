@@ -418,7 +418,7 @@ export default function SkillsSettingsPage() {
               key={s.id}
               skill={s}
               onEdit={() => startEdit(s)}
-              onDelete={() => handleDelete(s.id)}
+              onDelete={() => handleDelete(s.id, s.name)}
               onToggle={(v) => toggleEnabled(s, v)}
             />
           ))}
