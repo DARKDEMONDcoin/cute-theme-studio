@@ -15,7 +15,7 @@ import {
   HelpCircle,
   Asterisk,
   LogOut,
-  Coins,
+  Wallet,
   Gift,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
