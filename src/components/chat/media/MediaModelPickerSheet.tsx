@@ -8,7 +8,7 @@ import { useDynamicModels } from "@/hooks/useModels";
 import { Check, Image as ImageIcon, Video as VideoIcon, Lock } from "lucide-react";
 import { glassModelMenu, glassModelMenuStyle } from "@/components/model-picker/glassModelMenuStyles";
 import { BrandIcon, hasBrandIcon } from "@/components/chat/media/BrandIcon";
-import megsyIcon from "@/assets/megsy-icon-transparent.png";
+import megsyIcon from "@/assets/megsy-model-icon.png";
 import { useUserPlan } from "@/hooks/useUserPlan";
 import { isFreeModel, isPaidUser } from "@/lib/subscriptionGating";
 import { filterImageModels, filterVideoModels } from "@/lib/mediaModelPolicy";
