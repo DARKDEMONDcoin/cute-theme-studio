@@ -26,7 +26,9 @@ import { Switch } from "@/components/ui/switch";
 import MegsyStar from "@/components/files/MegsyStar";
 // (goBackOr no longer needed — SubShell handles back nav)
 import { getActiveWorkspaceId } from "@/lib/activeWorkspace";
-import { SubShell } from "@/components/settings/SubShell";
+import { SubShell, SubCard, SubSection } from "@/components/settings/SubShell";
+import { useConfirm } from "@/components/common/ConfirmDialog";
+
 import { cn } from "@/lib/utils";
 import { SkillsAddMenu } from "./components/SkillsExtras";
 
