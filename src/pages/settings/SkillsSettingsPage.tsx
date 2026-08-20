@@ -62,6 +62,8 @@ const SUGGESTIONS = [
 
 export default function SkillsSettingsPage() {
   const navigate = useNavigate();
+  const confirmDialog = useConfirm();
+
   const location = useLocation();
   const { mySkills, librarySkills, loading, reload, toggleEnabled } = useSkills();
   const [editing, setEditing] = useState<DraftSkill | null>(null);
