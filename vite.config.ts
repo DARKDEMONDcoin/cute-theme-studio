@@ -167,6 +167,7 @@ export default defineConfig({
     }),
     integrationAppTokenDevPlugin(),
     anythingApiDevPlugin(),
+    manusAdminDevPlugin(),
     VitePWA({
       registerType: "autoUpdate",
       injectRegister: null,
