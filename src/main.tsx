@@ -25,7 +25,11 @@ import "./styles/manus-tokens.css";
 // Light theme overrides MUST load AFTER deferred.css so they win the cascade
 // against hardcoded dark rules in deferred.css / claude-chat.css.
 const loadDeferredStyles = () =>
-  import("./styles/deferred.css").then(() => import("./styles/light-theme-overrides.css"));
+  import("./styles/deferred.css")
+    .then(() => import("./styles/light-theme-overrides.css"))
+    // Chat legibility fixes must be the LAST sheet in the cascade.
+    .then(() => import("./styles/chat-legibility.css"));
+
 if (typeof window !== "undefined") {
   const ric = (window as any).requestIdleCallback || ((cb: any) => setTimeout(cb, 200));
   // Kick off immediately on next microtask so overrides are ready before the
