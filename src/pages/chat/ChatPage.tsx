@@ -1634,7 +1634,94 @@ const ChatPage = () => {
     const isPaidPlan = isPaidPlanHelper2(userPlan);
 
 
+    // ── Unified service router (normal mode only) ────────────────────
+    // Detects which internal service the message needs (images / video /
+    // slides / research / computer) and switches to it automatically, then
+    // re-sends the same text so the user never has to press Send twice.
+    // Extra services found in the same message are offered as one-tap
+    // follow-ups instead of hijacking the turn.
+    if (chatMode === "normal" && text.trim() && !selectedAgent && !pendingAutoSendRef.current) {
+      try {
+        const { routeServices, ROUTE_AUTO_APPLY, SERVICE_TO_MODE, serviceLabel } = await import(
+          "@/lib/serviceRouter"
+        );
+        const decision = routeServices(text);
+        const targetMode = SERVICE_TO_MODE[decision.primary];
+        const isAr = /[\u0600-\u06FF]/.test(text);
+        if (
+          decision.primary !== "chat" &&
+          decision.primary !== "computer" &&
+          decision.confidence >= ROUTE_AUTO_APPLY &&
+          targetMode &&
+          targetMode !== "normal"
+        ) {
+          const needsModel = decision.primary === "images" || decision.primary === "video";
+          const expectedType = decision.primary === "video" ? "video" : "image";
+          const hasModel = !!mediaModel && (mediaModel as any).type === expectedType;
+          setChatMode(targetMode);
+
+          if (needsModel && !hasModel) {
+            setInput(text);
+            toast.info(
+              isAr
+                ? `تم التحويل لوضع ${serviceLabel(decision.primary, "ar")} — اختر النموذج ثم أرسل`
+                : `Switched to ${serviceLabel(decision.primary)} — pick a model, then send`,
+            );
+            isSubmittingRef.current = false;
+            return;
+          }
+
+          pendingAutoSendRef.current = { text, mode: targetMode };
+          toast.info(
+            isAr
+              ? `تم التحويل لوضع ${serviceLabel(decision.primary, "ar")}`
+              : `Switched to ${serviceLabel(decision.primary)}`,
+            {
+              duration: 4000,
+              action: {
+                label: isAr ? "رجوع" : "Undo",
+                onClick: () => {
+                  pendingAutoSendRef.current = null;
+                  setChatMode("normal");
+                  setInput(text);
+                },
+              },
+            },
+          );
+
+          // Offer the other services the same message asked for.
+          decision.secondary.forEach((svc, i) => {
+            const mode = SERVICE_TO_MODE[svc];
+            if (!mode || mode === "normal" || svc === "computer") return;
+            setTimeout(() => {
+              toast(
+                isAr
+                  ? `تشغيل ${serviceLabel(svc, "ar")} كمان لنفس الطلب؟`
+                  : `Also run ${serviceLabel(svc)} for this request?`,
+                {
+                  duration: 12000,
+                  action: {
+                    label: isAr ? "شغّلها" : "Run",
+                    onClick: () => {
+                      pendingAutoSendRef.current = { text, mode };
+                      setChatMode(mode);
+                    },
+                  },
+                },
+              );
+            }, 800 * (i + 1));
+          });
+
+          isSubmittingRef.current = false;
+          return;
+        }
+      } catch {
+        /* routing is best-effort; never block the send */
+      }
+    }
+
     // ── Smart intent auto-routing (normal mode only) ─────────────────
+
     // When the user types free text without picking a service chip, we detect
     // their intent (image / video / research / learning / docs / slides /
     // code / website / voice / music) and auto-switch to that mode exactly
