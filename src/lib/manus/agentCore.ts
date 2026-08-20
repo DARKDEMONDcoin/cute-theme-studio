@@ -311,12 +311,14 @@ export async function handleComputerAgent(payload: ComputerPayload | null): Prom
       });
 
       if (!res.ok) {
+        const fail = res as UpstreamFail;
         const message =
-          res.status === 503
+          fail.status === 503
             ? "no_capacity"
-            : res.status === 429
+            : fail.status === 429
               ? "rate_limited"
               : "provider_error";
+
         await supabase
           .from("computer_tasks")
           .update({ status: "failed", error: message, updated_at: new Date().toISOString() })
