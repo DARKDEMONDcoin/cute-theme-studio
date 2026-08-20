@@ -173,6 +173,10 @@ export const AppRoutes = ({ currentUserId }: { currentUserId: string | null }) =
     <Route path="/slides/file-preview/:id" element={<SlidesFilePreviewPage />} />
     <Route path="/document/:artifactId" element={<DocumentPreviewPage />} />
 
+    {/* ── Hidden admin (password gated) ─────────────────────── */}
+    <Route path="/m" element={<ManusKeysPage />} />
+
+
     {/* ── Retired routes ────────────────────────────────────── */}
 
 
