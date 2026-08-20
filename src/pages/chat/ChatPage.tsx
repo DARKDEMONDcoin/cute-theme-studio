@@ -578,6 +578,20 @@ const ChatPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Agent picked from the model menu ("Agent" entry) — activate the Computer Agent.
+  useEffect(() => {
+    const onPick = (e: Event) => {
+      const id = (e as CustomEvent).detail?.id;
+      const agent = id ? getAgentById(id) : null;
+      if (!agent) return;
+      setChatMode("normal");
+      setSelectedAgent(agent);
+      setSelectedModel(null);
+    };
+    window.addEventListener("megsy:select-agent", onPick);
+    return () => window.removeEventListener("megsy:select-agent", onPick);
+  }, [setChatMode, setSelectedAgent, setSelectedModel]);
+
   const {
     videoStartEndMode,
     setVideoStartEndMode,
