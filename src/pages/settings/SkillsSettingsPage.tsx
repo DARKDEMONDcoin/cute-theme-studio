@@ -2,7 +2,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
-  ArrowLeft,
   ArrowUp,
   Trash2,
   X,
