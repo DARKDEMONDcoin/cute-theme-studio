@@ -56,35 +56,35 @@ export default function CloudBrowserPage() {
 
   return (
     <SubShell title="Cloud browser">
-      <div className="rounded-[14px] overflow-hidden bg-[var(--mn-card)]">
-        <div className="flex items-center gap-3 px-4 py-3.5">
-          <span className="flex-1 text-[14px] font-medium text-[color:var(--mn-fg)]">
+      <section className="rounded-[20px] overflow-hidden bg-[var(--mn-card)]">
+        <div className="flex items-center gap-4 px-5 py-[18px]">
+          <span className="flex-1 text-[15px] leading-snug text-[color:var(--mn-fg)]">
             Keep me signed in across tasks
           </span>
           <Toggle checked={keepSignedIn} onChange={toggle} label="Keep me signed in across tasks" />
         </div>
-        <div className="h-px bg-[color:var(--mn-sep)] ml-4" />
+        <div className="h-px bg-[color:var(--mn-sep)] mx-5" />
         <button
           type="button"
           onClick={() => navigate("/settings/privacy")}
-          className="w-full text-left px-4 py-3.5 text-[14px] font-medium text-primary"
+          className="w-full text-start px-5 py-[18px] text-[15px] text-primary"
         >
           Learn more
         </button>
-      </div>
+      </section>
 
-      <div className="rounded-[14px] overflow-hidden bg-[var(--mn-card)]">
+      <section className="rounded-[20px] overflow-hidden bg-[var(--mn-card)]">
         <button
           type="button"
           onClick={() => navigate("/settings/data")}
-          className="w-full flex items-center gap-3 px-4 py-3.5 text-left"
+          className="w-full flex items-center gap-4 px-5 py-[18px] text-start"
         >
-          <span className="flex-1 text-[14px] font-medium text-[color:var(--mn-fg)]">
+          <span className="flex-1 text-[15px] leading-snug text-[color:var(--mn-fg)]">
             Cookies and other site data
           </span>
-          <ChevronRight className="w-4 h-4 text-[color:var(--mn-faint)]" />
+          <ChevronRight className="w-4.5 h-4.5 shrink-0 text-[color:var(--mn-faint)] rtl:rotate-180" />
         </button>
-      </div>
+      </section>
     </SubShell>
   );
 }
