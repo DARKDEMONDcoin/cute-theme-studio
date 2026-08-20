@@ -341,8 +341,9 @@ export default function ComposerModelMenu({
                             toast.info(`${item.label} is available on paid plans only`);
                             return;
                           }
+                          if (item.kind === "agent") { window.dispatchEvent(new CustomEvent("megsy:select-agent", { detail: { id: item.id } })); onOpenChange(false); return; }
                           if (item.kind === "tier") onTierSelect(item.id as "lite" | "pro" | "max");
-                          else onChatModelSelect({ id: item.id, label: item.label });
+                          else onChatModelSelect({ id: (item as any).id, label: (item as any).label });
                           onOpenChange(false);
                         }}
                         style={{
@@ -523,10 +524,11 @@ export default function ComposerModelMenu({
                                   return;
                                 }
 
+                                if (item.kind === "agent") { window.dispatchEvent(new CustomEvent("megsy:select-agent", { detail: { id: item.id } })); onOpenChange(false); return; }
                                 if (item.kind === "tier")
                                   onTierSelect(item.id as "lite" | "pro" | "max");
                                 else
-                                  onChatModelSelect({ id: item.id, label: item.label });
+                                  onChatModelSelect({ id: (item as any).id, label: (item as any).label });
                                 toast.success(`Selected: ${item.label}`);
                                 onOpenChange(false);
                               }}
@@ -874,8 +876,9 @@ export default function ComposerModelMenu({
                                 toast.info(`${item.label} is available on premium plans only`);
                                 return;
                               }
+                              if (item.kind === "agent") { window.dispatchEvent(new CustomEvent("megsy:select-agent", { detail: { id: item.id } })); onOpenChange(false); return; }
                               if (item.kind === "tier") onTierSelect(item.id as "lite" | "pro" | "max");
-                              else onChatModelSelect({ id: item.id, label: item.label });
+                              else onChatModelSelect({ id: (item as any).id, label: (item as any).label });
                               toast.success(`Selected: ${item.label}`);
                               onOpenChange(false);
                             }}

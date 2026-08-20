@@ -31,6 +31,7 @@ import {
   ScanSearch,
   ShoppingBag,
   Monitor,
+  Bot,
   
 
 } from "lucide-react";
@@ -156,6 +157,7 @@ const PlusMain = (p: PlusContentProps) => {
       items: [
         { id: "website", label: "Create a website", Icon: Code2, badge: "New", onClick: closeThen(() => p.onWebsiteStart?.()) },
         { id: "code", label: "Write and build code", Icon: Smartphone, onClick: closeThen(() => p.onModeChange?.("code")) },
+        { id: "agent", label: "Agent", Icon: Bot, badge: "New", onClick: closeThen(() => p.onAgentSelect?.("computer")) },
         { id: "operator", label: "Connect computer", Icon: Monitor, onClick: closeThen(() => p.onModeChange?.("operator")) },
       ],
     },

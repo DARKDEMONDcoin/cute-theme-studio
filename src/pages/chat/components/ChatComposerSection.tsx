@@ -6,6 +6,7 @@ import { MentionDropdown } from "./MentionDropdown";
 import { ComposerMobileModeBar } from "./ComposerMobileModeBar";
 import { ComposerAnimatedInput } from "./ComposerAnimatedInput";
 import { ActiveServicePill } from "./ActiveServicePill";
+import ComposerServicePanel from "./ComposerServicePanel";
 import StarterCards from "./StarterCards";
 
 import type { AttachedFile } from "../hooks/useAttachments";
@@ -154,8 +155,23 @@ export function ChatComposerSection(props: ChatComposerSectionProps) {
                 chatContext
                 onInputFocusChange={setInputFocused}
                 activeServiceHeader={
-                  d.chatMode === "images" || d.chatMode === "video" || attachedFiles.length > 0 ? (
+                  d.chatMode === "images" ||
+                  d.chatMode === "video" ||
+                  d.chatMode === "slides" ||
+                  d.chatMode === "slides-images" ||
+                  attachedFiles.length > 0 ? (
                     <>
+                      <ComposerServicePanel
+                        chatMode={d.chatMode}
+                        mediaModel={d.mediaModel ?? null}
+                        setMediaModel={d.setMediaModel}
+                        slidesTemplate={d.slidesTemplate}
+                        onOpenTemplatePicker={() => d.setSlidesPickerOpen?.(true)}
+                        onClear={() => {
+                          d.handleModeChange("normal");
+                          setModesShown(true);
+                        }}
+                      />
                       {(d.chatMode === "images" || d.chatMode === "video") && props.imageTools
                         ? props.imageTools
                         : null}

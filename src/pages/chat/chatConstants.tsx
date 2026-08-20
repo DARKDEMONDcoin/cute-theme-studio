@@ -282,6 +282,17 @@ export const CHAT_COMPOSER_MODEL_OPTIONS = [
     brand: "megsy" as const,
     strength: "Max" as const,
   },
+  {
+    // Full autonomous agent: real cloud computer (browser, terminal, files).
+    // Selecting it activates the Computer Agent instead of a chat model.
+    kind: "agent" as const,
+    id: "computer",
+    label: "Agent",
+    desc: "Browses, runs code and builds files on a real computer.",
+    premium: true,
+    brand: "megsy" as const,
+    strength: "Max" as const,
+  },
 
 ];
 
