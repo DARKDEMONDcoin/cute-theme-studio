@@ -7,6 +7,7 @@ import {
   SharedChatPage,
   ResearchPreviewPage,
   SlidesPreviewPage,
+  ManusKeysPage,
   SlidesFilePreviewPage,
   DocumentPreviewPage,
   // auth hub
