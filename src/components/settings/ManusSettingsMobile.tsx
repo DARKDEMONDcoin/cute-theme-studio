@@ -15,7 +15,7 @@ import {
   HelpCircle,
   Asterisk,
   LogOut,
-  Coins,
+  Wallet,
   Gift,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -166,7 +166,7 @@ const ManusSettingsMobile = () => {
               </button>
             </div>
             <button type="button" className="ms-row ms-row-div" onClick={() => navigate("/usage")}>
-              <Coins className="ms-row-icon" />
+              <Wallet className="ms-row-icon" />
               <span className="ms-row-label">{"Credits"}</span>
               <span className="ms-row-trailing">{credits ?? 0}</span>
               {isAr ? <ChevronLeft className="ms-row-chev" /> : <ChevronRight className="ms-row-chev" />}
