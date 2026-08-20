@@ -68,17 +68,6 @@ async function availableKeys(supabase: SupabaseClient): Promise<KeyRow[]> {
     });
 }
 
-async function markSuccess(supabase: SupabaseClient, key: KeyRow) {
-  await supabase
-    .from("manus_keys")
-    .update({
-      last_used_at: new Date().toISOString(),
-      success_count: 0 + 1 + (0 as number), // replaced below by rpc-less increment
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", key.id);
-}
-
 async function markFailure(
   supabase: SupabaseClient,
   key: KeyRow,
@@ -452,5 +441,3 @@ async function listEvents(supabase: SupabaseClient, taskId: string) {
     .order("created_at", { ascending: true });
   return data ?? [];
 }
-
-export { markSuccess };
