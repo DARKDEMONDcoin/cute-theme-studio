@@ -2495,6 +2495,125 @@ export type Database = {
         }
         Relationships: []
       }
+      computer_events: {
+        Row: {
+          created_at: string
+          detail: string | null
+          id: string
+          kind: string
+          task_id: string
+          title: string | null
+          url: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          detail?: string | null
+          id?: string
+          kind?: string
+          task_id: string
+          title?: string | null
+          url?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          detail?: string | null
+          id?: string
+          kind?: string
+          task_id?: string
+          title?: string | null
+          url?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "computer_events_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "computer_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      computer_memory: {
+        Row: {
+          conversation_id: string | null
+          facts: Json
+          id: string
+          summary: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          conversation_id?: string | null
+          facts?: Json
+          id?: string
+          summary?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          conversation_id?: string | null
+          facts?: Json
+          id?: string
+          summary?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      computer_tasks: {
+        Row: {
+          conversation_id: string | null
+          created_at: string
+          error: string | null
+          files: Json
+          id: string
+          key_id: string | null
+          message_id: string | null
+          progress: string | null
+          prompt: string
+          provider_task_id: string | null
+          result_text: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          conversation_id?: string | null
+          created_at?: string
+          error?: string | null
+          files?: Json
+          id?: string
+          key_id?: string | null
+          message_id?: string | null
+          progress?: string | null
+          prompt: string
+          provider_task_id?: string | null
+          result_text?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          conversation_id?: string | null
+          created_at?: string
+          error?: string | null
+          files?: Json
+          id?: string
+          key_id?: string | null
+          message_id?: string | null
+          progress?: string | null
+          prompt?: string
+          provider_task_id?: string | null
+          result_text?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       contact_submissions: {
         Row: {
           ai_reply: string | null
