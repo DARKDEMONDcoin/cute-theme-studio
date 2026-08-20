@@ -3,15 +3,12 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Image, Video, FileText, Globe, Share2, Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useUserLang } from "@/lib/authI18n";
 import { SubShell, SubSection, SubRowList, SubRow } from "@/components/settings/SubShell";
 
 type Counts = { images: number; videos: number; files: number; sites: number; shared: number };
 
 export default function DataControlsPage() {
   const navigate = useNavigate();
-  const lang = useUserLang();
-  const isAr = lang === "ar" || lang === "ar-eg" || lang === "he" || lang === "fa";
   const [counts, setCounts] = useState<Counts | null>(null);
 
   useEffect(() => {
@@ -50,46 +47,36 @@ export default function DataControlsPage() {
   const n = (v?: number) => (counts ? String(v ?? 0) : "…");
 
   return (
-    <SubShell
-      title={"Data controls"}
-      subtitle={
-        "Everything you created or uploaded in Megsy, in one place."
-      }
-    >
+    <SubShell title={"Data controls"}>
       <SubSection title={"Your content"}>
         <SubRowList>
           <SubRow
             icon={Image}
             label={"Images"}
-            hint={"AI-generated images"}
             trailing={<span className="text-[12px] tabular-nums">{n(counts?.images)}</span>}
             onClick={() => navigate("/settings/data/images")}
           />
           <SubRow
             icon={Video}
             label={"Videos"}
-            hint={"Generated videos"}
             trailing={<span className="text-[12px] tabular-nums">{n(counts?.videos)}</span>}
             onClick={() => navigate("/settings/data/videos")}
           />
           <SubRow
             icon={FileText}
             label={"Files"}
-            hint={"Uploads and attachments"}
             trailing={<span className="text-[12px] tabular-nums">{n(counts?.files)}</span>}
             onClick={() => navigate("/settings/data/files")}
           />
           <SubRow
             icon={Globe}
             label={"Published sites"}
-            hint={"Sites Megsy built for you"}
             trailing={<span className="text-[12px] tabular-nums">{n(counts?.sites)}</span>}
             onClick={() => navigate("/settings/data/sites")}
           />
           <SubRow
             icon={Share2}
             label={"Shared chats"}
-            hint={"Conversations shared via link"}
             trailing={<span className="text-[12px] tabular-nums">{n(counts?.shared)}</span>}
             onClick={() => navigate("/settings/data/shared")}
           />

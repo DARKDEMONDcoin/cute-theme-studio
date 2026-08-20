@@ -126,7 +126,7 @@ export default function CommandPalette() {
   const settings: Cmd[] = [
     { id: "s", label: "Settings", icon: Settings, run: go("/settings") },
     { id: "s-profile", label: "Profile", icon: User, run: go("/settings/profile") },
-    { id: "s-cust", label: "Customization", icon: Palette, run: go("/settings/customization") },
+    { id: "s-cust", label: "Composer", icon: Palette, run: go("/settings/customization") },
     { id: "s-ai", label: "AI Personalization", icon: Sparkles, run: go("/settings/ai-personalization") },
     { id: "s-mcp", label: "MCP Servers", icon: Plug, keywords: "tools integrations", run: go("/settings/mcp") },
     { id: "s-bill", label: "Billing", icon: CreditCard, run: go("/settings/billing") },

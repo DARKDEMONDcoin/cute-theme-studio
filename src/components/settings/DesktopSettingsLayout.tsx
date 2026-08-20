@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { ArrowLeft, PanelLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useConfirm } from "@/components/common/ConfirmDialog";
 import AppLayout from "@/layouts/AppLayout";
 import { useSettingsShell } from "@/components/settings/SettingsShell";
 import { useSidebarCollapsed } from "@/hooks/useSidebarCollapsed";
@@ -52,7 +53,7 @@ const NAV_GROUPS: NavGroup[] = [
   {
     title: "System",
     items: [
-      { id: "customization", label: "Appearance", path: "/settings/customization", Icon: ThemeIcon },
+      { id: "customization", label: "Composer", path: "/settings/customization", Icon: ThemeIcon },
       { id: "notifications", label: "Notifications", path: "/settings/notifications", Icon: NotificationsIcon },
       { id: "privacy", label: "Privacy & Data", path: "/settings/privacy", Icon: PrivacyIcon },
     ],
@@ -85,7 +86,15 @@ export function DesktopSettingsLayout({
   const go = (path: string) => navigate(path);
   const settingsVideoRef = useRef<HTMLVideoElement>(null);
 
+  const confirm = useConfirm();
+
   const handleLogout = async () => {
+    const ok = await confirm({
+      title: "Log out",
+      description: "You'll need to sign in again to access your chats.",
+      confirmLabel: "Log out",
+    });
+    if (!ok) return;
     await supabase.auth.signOut();
     go("/auth");
   };

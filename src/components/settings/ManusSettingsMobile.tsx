@@ -15,10 +15,11 @@ import {
   HelpCircle,
   Asterisk,
   LogOut,
-  Gem,
+  Coins,
   Gift,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useConfirm } from "@/components/common/ConfirmDialog";
 import { useActiveAccount } from "@/hooks/useActiveAccount";
 import { useCredits } from "@/hooks/useCredits";
 import { t as authT, useUserLang } from "@/lib/authI18n";
@@ -70,7 +71,15 @@ const ManusSettingsMobile = () => {
 
   const planLabel = (plan || "free").toLowerCase() === "free" ? "Free" : (plan || "").toUpperCase();
 
+  const confirm = useConfirm();
+
   const handleLogout = async () => {
+    const ok = await confirm({
+      title: "Log out",
+      description: "You'll need to sign in again to access your chats.",
+      confirmLabel: "Log out",
+    });
+    if (!ok) return;
     await supabase.auth.signOut();
     navigate("/auth");
   };
@@ -157,7 +166,7 @@ const ManusSettingsMobile = () => {
               </button>
             </div>
             <button type="button" className="ms-row ms-row-div" onClick={() => navigate("/usage")}>
-              <Gem className="ms-row-icon" />
+              <Coins className="ms-row-icon" />
               <span className="ms-row-label">{"Credits"}</span>
               <span className="ms-row-trailing">{credits ?? 0}</span>
               {isAr ? <ChevronLeft className="ms-row-chev" /> : <ChevronRight className="ms-row-chev" />}

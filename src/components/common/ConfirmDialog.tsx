@@ -1,124 +1,196 @@
-import { createContext, useCallback, useContext, useMemo, useRef, useState } from "react";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Input } from "@/components/ui/input";
+/** @doc Clean confirmation dialog — used for destructive and sign-out flows. */
+import { ReactNode, createContext, useCallback, useContext, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
+import { AlertTriangle, LogOut, Loader2 } from "lucide-react";
 
-/**
- * Promise-based confirmation dialog. Use through `useConfirm()` so any
- * destructive button can `await confirm({...})` and continue based on the
- * user's choice. Supports a "type-to-confirm" mode for high-risk actions
- * like deleting an account or workspace.
- */
+export type ConfirmTone = "danger" | "neutral";
 
+interface ConfirmDialogProps {
+  open: boolean;
+  title: string;
+  description?: string;
+  confirmLabel?: string;
+  cancelLabel?: string;
+  tone?: ConfirmTone;
+  icon?: ReactNode;
+  loading?: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+}
+
+export function ConfirmDialog({
+  open,
+  title,
+  description,
+  confirmLabel = "Confirm",
+  cancelLabel = "Cancel",
+  tone = "neutral",
+  icon,
+  loading = false,
+  onConfirm,
+  onCancel,
+}: ConfirmDialogProps) {
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onCancel();
+    };
+    document.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [open, onCancel]);
+
+  if (!open || typeof document === "undefined") return null;
+
+  const danger = tone === "danger";
+
+  return createPortal(
+    <div className="cfd-scrim" onClick={loading ? undefined : onCancel}>
+      <style>{cfdCss}</style>
+      <div
+        className="cfd-card"
+        role="alertdialog"
+        aria-modal="true"
+        aria-label={title}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className={`cfd-icon ${danger ? "is-danger" : ""}`}>
+          {icon ?? (danger ? <AlertTriangle size={20} strokeWidth={1.8} /> : <LogOut size={20} strokeWidth={1.8} />)}
+        </div>
+        <h2 className="cfd-title">{title}</h2>
+        {description && <p className="cfd-desc">{description}</p>}
+        <div className="cfd-actions">
+          <button type="button" className="cfd-btn" onClick={onCancel} disabled={loading}>
+            {cancelLabel}
+          </button>
+          <button
+            type="button"
+            className={`cfd-btn cfd-btn-primary ${danger ? "is-danger" : ""}`}
+            onClick={onConfirm}
+            disabled={loading}
+          >
+            {loading && <Loader2 className="cfd-spin" size={14} />}
+            {confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
+const cfdCss = `
+.cfd-scrim {
+  position: fixed; inset: 0; z-index: 120;
+  display: grid; place-items: center;
+  padding: 22px;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  animation: cfd-fade 180ms ease-out both;
+}
+.cfd-card {
+  width: 100%; max-width: 340px;
+  border-radius: 22px;
+  padding: 22px 20px 18px;
+  text-align: center;
+  background: var(--mn-card, #16181c);
+  color: var(--mn-fg, #f5f5f5);
+  border: 1px solid var(--mn-sep, rgba(255,255,255,0.08));
+  box-shadow: 0 30px 80px -24px rgba(0,0,0,0.8);
+  animation: cfd-pop 220ms cubic-bezier(0.16,1,0.3,1) both;
+}
+.cfd-icon {
+  width: 46px; height: 46px; margin: 0 auto 14px;
+  display: grid; place-items: center; border-radius: 999px;
+  background: rgba(255,255,255,0.06);
+  color: var(--mn-fg, #f5f5f5);
+}
+.cfd-icon.is-danger { background: rgba(255,90,90,0.10); color: var(--mn-danger, #ff5a5a); }
+.cfd-title { margin: 0; font-size: 17px; font-weight: 600; letter-spacing: -0.01em; }
+.cfd-desc {
+  margin: 8px 0 0; font-size: 13.5px; line-height: 1.5;
+  color: var(--mn-muted, rgba(245,245,245,0.6));
+}
+.cfd-actions { margin-top: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.cfd-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 12px 10px; border-radius: 14px; border: 0;
+  background: var(--mn-card-2, rgba(255,255,255,0.06));
+  color: var(--mn-fg, #f5f5f5);
+  font: inherit; font-size: 14px; font-weight: 500;
+  cursor: pointer; transition: transform 150ms ease, opacity 150ms ease, background-color 150ms ease;
+}
+.cfd-btn:active { transform: scale(0.97); }
+.cfd-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.cfd-btn-primary { background: var(--mn-fg, #f5f5f5); color: var(--mn-bg, #0b0c0e); }
+.cfd-btn-primary.is-danger { background: var(--mn-danger, #ff5a5a); color: #fff; }
+.cfd-spin { animation: cfd-rot 900ms linear infinite; }
+@keyframes cfd-rot { to { transform: rotate(360deg); } }
+@keyframes cfd-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes cfd-pop { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+`;
+
+export default ConfirmDialog;
+
+// ---------------------------------------------------------------------------
+// Imperative API: <ConfirmProvider> + useConfirm()
+// ---------------------------------------------------------------------------
 type ConfirmOptions = {
   title: string;
   description?: string;
   confirmLabel?: string;
   cancelLabel?: string;
-  destructive?: boolean;
-  /** If set, the confirm button is disabled until the user types this exact text. */
-  typeToConfirm?: string;
+  tone?: ConfirmTone;
+  icon?: ReactNode;
 };
 
-type Resolver = (ok: boolean) => void;
+const ConfirmContext = createContext<(opts: ConfirmOptions) => Promise<boolean>>(
+  async () => false,
+);
 
-type Ctx = {
-  confirm: (opts: ConfirmOptions) => Promise<boolean>;
-};
+export function ConfirmProvider({ children }: { children: ReactNode }) {
+  const [state, setState] = useState<
+    (ConfirmOptions & { resolve: (v: boolean) => void }) | null
+  >(null);
 
-const ConfirmContext = createContext<Ctx | null>(null);
+  const confirm = useCallback(
+    (opts: ConfirmOptions) =>
+      new Promise<boolean>((resolve) => setState({ ...opts, resolve })),
+    [],
+  );
 
-export const ConfirmProvider = ({ children }: { children: React.ReactNode }) => {
-  const [opts, setOpts] = useState<ConfirmOptions | null>(null);
-  const [typed, setTyped] = useState("");
-  const resolverRef = useRef<Resolver | null>(null);
-
-  const confirm = useCallback((next: ConfirmOptions) => {
-    setTyped("");
-    setOpts(next);
-    return new Promise<boolean>((resolve) => {
-      resolverRef.current = resolve;
-    });
-  }, []);
-
-  const resolve = (ok: boolean) => {
-    resolverRef.current?.(ok);
-    resolverRef.current = null;
-    setOpts(null);
-    setTyped("");
-  };
-
-  const value = useMemo<Ctx>(() => ({ confirm }), [confirm]);
-  const expected = opts?.typeToConfirm?.trim();
-  const typedOk = expected ? typed.trim() === expected : true;
+  const close = useCallback(
+    (value: boolean) => {
+      setState((s) => {
+        s?.resolve(value);
+        return null;
+      });
+    },
+    [],
+  );
 
   return (
-    <ConfirmContext.Provider value={value}>
+    <ConfirmContext.Provider value={confirm}>
       {children}
-      <AlertDialog
-        open={!!opts}
-        onOpenChange={(open) => {
-          if (!open) resolve(false);
-        }}
-      >
-        {opts && (
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>{opts.title}</AlertDialogTitle>
-              {opts.description && (
-                <AlertDialogDescription>{opts.description}</AlertDialogDescription>
-              )}
-            </AlertDialogHeader>
-            {expected && (
-              <div className="space-y-2">
-                <p className="text-xs text-muted-foreground">
-                  Type <span className="font-mono font-semibold text-foreground">{expected}</span>{" "}
-                  to confirm.
-                </p>
-                <Input
-                  autoFocus
-                  value={typed}
-                  onChange={(e) => setTyped(e.target.value)}
-                  placeholder={expected}
-                  aria-label="Type to confirm"
-                />
-              </div>
-            )}
-            <AlertDialogFooter>
-              <AlertDialogCancel onClick={() => resolve(false)}>
-                {opts.cancelLabel ?? "Cancel"}
-              </AlertDialogCancel>
-              <AlertDialogAction
-                disabled={!typedOk}
-                onClick={() => resolve(true)}
-                className={
-                  opts.destructive
-                    ? "bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                    : undefined
-                }
-              >
-                {opts.confirmLabel ?? "Confirm"}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        )}
-      </AlertDialog>
+      <ConfirmDialog
+        open={!!state}
+        title={state?.title ?? ""}
+        description={state?.description}
+        confirmLabel={state?.confirmLabel}
+        cancelLabel={state?.cancelLabel}
+        tone={state?.tone}
+        icon={state?.icon}
+        onConfirm={() => close(true)}
+        onCancel={() => close(false)}
+      />
     </ConfirmContext.Provider>
   );
-};
+}
 
-export const useConfirm = () => {
-  const ctx = useContext(ConfirmContext);
-  if (!ctx) {
-    throw new Error("useConfirm must be used inside <ConfirmProvider>");
-  }
-  return ctx.confirm;
-};
+export function useConfirm() {
+  return useContext(ConfirmContext);
+}

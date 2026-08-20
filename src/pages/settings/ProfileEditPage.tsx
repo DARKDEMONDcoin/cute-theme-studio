@@ -2,12 +2,13 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSmartBack } from "@/hooks/useSmartBack";
-import { Check, Loader2, Trash2 } from "lucide-react";
+import { Check, Camera, Loader2, LogOut, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { sanitizeErrorMessage } from "@/lib/sanitizeError";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { SubShell, SubSection, SubCard, DangerCallout } from "@/components/settings/SubShell";
+import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 
 const ProfileEditPage = () => {
   const navigate = useNavigate();
@@ -24,6 +25,11 @@ const ProfileEditPage = () => {
   const savedRef = useRef({ fullName: "", nickname: "", instructions: "" });
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [logoutOpen, setLogoutOpen] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [avatarBusy, setAvatarBusy] = useState(false);
+  const fileRef = useRef<HTMLInputElement | null>(null);
 
   // Load data
   useEffect(() => {
@@ -36,12 +42,15 @@ const ProfileEditPage = () => {
       }
       setUserId(user.id);
       setEmail(user.email ?? "");
+      setAvatarUrl(user.user_metadata?.avatar_url ?? null);
 
       const [profileRes, persRes] = await Promise.all([
-        supabase.from("profiles").select("display_name").eq("id", user.id).maybeSingle(),
+        supabase.from("profiles").select("display_name, avatar_url").eq("id", user.id).maybeSingle(),
         supabase.from("ai_personalization").select("call_name, custom_instructions").eq("user_id", user.id).maybeSingle(),
       ]);
       if (cancelled) return;
+
+      if ((profileRes.data as any)?.avatar_url) setAvatarUrl((profileRes.data as any).avatar_url);
 
       const initialFull =
         (profileRes.data as any)?.display_name ||
@@ -118,9 +127,57 @@ const ProfileEditPage = () => {
 
   const goBack = useSmartBack("/settings");
 
+  const pickAvatar = () => fileRef.current?.click();
+
+  const handleAvatarFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !userId) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please choose an image file");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image is too large (max 5MB)");
+      return;
+    }
+    setAvatarBusy(true);
+    try {
+      const ext = (file.name.split(".").pop() || "png").toLowerCase();
+      const path = `avatars/${userId}/${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("uploads")
+        .upload(path, file, { contentType: file.type, upsert: true });
+      if (upErr) throw upErr;
+      const { data: pub } = supabase.storage.from("uploads").getPublicUrl(path);
+      const url = pub?.publicUrl;
+      if (!url) throw new Error("Could not resolve image URL");
+
+      const [profRes, authRes] = await Promise.all([
+        supabase.from("profiles").update({ avatar_url: url }).eq("id", userId),
+        supabase.auth.updateUser({ data: { avatar_url: url } }),
+      ]);
+      if ((profRes as any)?.error) throw (profRes as any).error;
+      if ((authRes as any)?.error) throw (authRes as any).error;
+
+      setAvatarUrl(url);
+      toast.success("Profile photo updated");
+    } catch (err: any) {
+      toast.error(sanitizeErrorMessage(err, "Failed to update photo"));
+    } finally {
+      setAvatarBusy(false);
+    }
+  };
+
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate("/auth");
+    setLoggingOut(true);
+    try {
+      await supabase.auth.signOut();
+      navigate("/auth");
+    } finally {
+      setLoggingOut(false);
+      setLogoutOpen(false);
+    }
   };
 
   const openDelete = () => setConfirmOpen(true);
@@ -156,9 +213,31 @@ const ProfileEditPage = () => {
 
         <main className="pep-main">
           <div className="pep-avatar-wrap">
-            <span className="pep-avatar">{initial}</span>
-            <p className="pep-avatar-hint">Tap to change avatar</p>
+            <button
+              type="button"
+              className="pep-avatar-btn"
+              onClick={pickAvatar}
+              disabled={avatarBusy}
+              aria-label="Change profile photo"
+            >
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="" className="pep-avatar-img" />
+              ) : (
+                <span className="pep-avatar">{initial}</span>
+              )}
+              <span className="pep-avatar-badge">
+                {avatarBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Camera className="w-3.5 h-3.5" />}
+              </span>
+            </button>
+            <p className="pep-avatar-hint">{avatarBusy ? "Uploading…" : "Tap to change photo"}</p>
           </div>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            hidden
+            onChange={handleAvatarFile}
+          />
 
           <section className="pep-card">
             <div className="pep-row">
@@ -184,7 +263,7 @@ const ProfileEditPage = () => {
             </div>
           </section>
 
-          <button className="pep-flat" type="button" onClick={handleLogout}>
+          <button className="pep-flat" type="button" onClick={() => setLogoutOpen(true)}>
             Log out
           </button>
 
@@ -195,29 +274,27 @@ const ProfileEditPage = () => {
           <div className="pep-spacer" />
         </main>
 
-        {/* Confirm dialog */}
-        {confirmOpen && (
-          <div className="pep-modal-scrim" onClick={() => setConfirmOpen(false)}>
-            <div
-              className="pep-modal"
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="pep-modal-title"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <h3 id="pep-modal-title" className="pep-modal-title">Delete account</h3>
-              <p className="pep-modal-body">Are you sure you want to delete your account?</p>
-              <div className="pep-modal-actions">
-                <button className="pep-modal-btn" onClick={() => setConfirmOpen(false)}>
-                  Cancel
-                </button>
-                <button className="pep-modal-btn pep-modal-btn-danger" onClick={confirmDelete}>
-                  Delete
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        <ConfirmDialog
+          open={confirmOpen}
+          tone="danger"
+          title="Delete account"
+          description="This permanently removes your account, chats and files. This cannot be undone."
+          confirmLabel="Delete"
+          onConfirm={confirmDelete}
+          onCancel={() => setConfirmOpen(false)}
+        />
+
+        <ConfirmDialog
+          open={logoutOpen}
+          title="Log out"
+          description="You'll need to sign in again to access your chats."
+          confirmLabel="Log out"
+          loading={loggingOut}
+          icon={<LogOut size={20} strokeWidth={1.8} />}
+          onConfirm={handleLogout}
+          onCancel={() => setLogoutOpen(false)}
+        />
+
       </div>
     );
   }
@@ -236,6 +313,43 @@ const ProfileEditPage = () => {
         </span>
       }
     >
+      <SubSection title="Photo" description="Shown across Megsy.">
+        <SubCard>
+          <div className="flex items-center gap-4">
+            <button
+              type="button"
+              onClick={pickAvatar}
+              disabled={avatarBusy}
+              className="relative w-16 h-16 rounded-full overflow-hidden border border-border/70 bg-muted grid place-items-center text-[22px] font-medium text-foreground"
+              aria-label="Change profile photo"
+            >
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
+              ) : (
+                (nickname || fullName || email || "U").trim().charAt(0).toUpperCase()
+              )}
+              {avatarBusy && (
+                <span className="absolute inset-0 grid place-items-center bg-background/60">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                </span>
+              )}
+            </button>
+            <div>
+              <button
+                type="button"
+                onClick={pickAvatar}
+                disabled={avatarBusy}
+                className="px-3.5 py-2 rounded-lg text-[13px] font-medium bg-background/60 border border-border/70 hover:border-foreground/40 transition-colors inline-flex items-center gap-2"
+              >
+                <Camera className="w-3.5 h-3.5" /> Upload photo
+              </button>
+              <p className="mt-2 text-[12px] text-muted-foreground">PNG or JPG, up to 5MB.</p>
+            </div>
+          </div>
+          <input ref={fileRef} type="file" accept="image/*" hidden onChange={handleAvatarFile} />
+        </SubCard>
+      </SubSection>
+
       <SubSection title="Names" description="How Megsy addresses you.">
         <SubCard>
           <div className="space-y-4">
@@ -286,7 +400,7 @@ const ProfileEditPage = () => {
           description="Permanently remove your account and all associated data."
           action={
             <button
-              onClick={() => navigate("/settings/delete-account")}
+              onClick={openDelete}
               className="px-4 py-2 rounded-lg text-[13px] font-medium bg-rose-500/10 text-rose-300 border border-rose-500/30 hover:bg-rose-500/20 transition-colors"
             >
               Delete account
@@ -294,6 +408,26 @@ const ProfileEditPage = () => {
           }
         />
       </SubSection>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        tone="danger"
+        title="Delete account"
+        description="This permanently removes your account, chats and files. This cannot be undone."
+        confirmLabel="Delete"
+        onConfirm={confirmDelete}
+        onCancel={() => setConfirmOpen(false)}
+      />
+      <ConfirmDialog
+        open={logoutOpen}
+        title="Log out"
+        description="You'll need to sign in again to access your chats."
+        confirmLabel="Log out"
+        loading={loggingOut}
+        icon={<LogOut size={20} strokeWidth={1.8} />}
+        onConfirm={handleLogout}
+        onCancel={() => setLogoutOpen(false)}
+      />
     </SubShell>
   );
 };
@@ -341,6 +475,21 @@ const pepCss = `
   font-size: 30px; font-weight: 500; line-height: 1;
 }
 .pep-avatar-hint { margin: 0; font-size: 12.5px; color: var(--mn-muted); }
+.pep-avatar-btn {
+  position: relative; padding: 0; border: 0; background: transparent;
+  width: 74px; height: 74px; border-radius: 999px; cursor: pointer;
+  transition: transform 160ms ease;
+}
+.pep-avatar-btn:active { transform: scale(0.96); }
+.pep-avatar-btn:disabled { opacity: 0.7; }
+.pep-avatar-img { width: 74px; height: 74px; border-radius: 999px; object-fit: cover; display: block; }
+.pep-avatar-badge {
+  position: absolute; right: -2px; bottom: -2px;
+  width: 26px; height: 26px; border-radius: 999px;
+  display: grid; place-items: center;
+  background: var(--mn-fg); color: var(--mn-bg);
+  border: 2px solid var(--mn-bg);
+}
 .pep-row-value { flex: 1; text-align: end; font-size: 14px; color: var(--mn-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pep-row-value-mono { font-variant-numeric: tabular-nums; }
 .pep-flat {

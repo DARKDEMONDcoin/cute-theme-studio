@@ -1,55 +1,24 @@
-/** @doc Appearance — Pure black, Gold accent, icon-only back button. */
+/** @doc Composer preferences — send-key behaviour. */
 import { useState, useCallback, useEffect } from "react";
 import { ArrowLeft } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 import { useSmartBack } from "@/hooks/useSmartBack";
 import { getSendMode, setSendMode, type SendMode } from "@/lib/composerKey";
 
-const ACCENTS = [
-  { hsl: "45 90% 55%", hex: "#c9a84c", name: "Gold" },
-  { hsl: "262 60% 55%", hex: "#7c5cfc", name: "Violet" },
-  { hsl: "210 80% 55%", hex: "#3b82f6", name: "Blue" },
-  { hsl: "142 50% 50%", hex: "#22c55e", name: "Green" },
-  { hsl: "330 70% 55%", hex: "#ec4899", name: "Pink" },
-  { hsl: "25 90% 55%", hex: "#f97316", name: "Orange" },
-  { hsl: "160 60% 45%", hex: "#14b8a6", name: "Teal" },
-  { hsl: "0 70% 55%", hex: "#ef4444", name: "Red" },
-  { hsl: "180 60% 45%", hex: "#06b6d4", name: "Cyan" },
-  { hsl: "270 60% 55%", hex: "#8b5cf6", name: "Purple" },
-  { hsl: "85 60% 45%", hex: "#84cc16", name: "Lime" },
-  { hsl: "12 85% 58%", hex: "#f56042", name: "Coral" },
-];
-
-const GOLD_HSL = "45 90% 55%";
 const CustomizationPage = () => {
-  const navigate = useNavigate();
   const goBack = useSmartBack("/settings");
-  const [accent, setAccent] = useState(() => localStorage.getItem("accent") || GOLD_HSL);
   const [mode, setMode] = useState<SendMode>(() => getSendMode());
 
   useEffect(() => {
     document.body.classList.add("ms-theme");
-    document.documentElement.style.setProperty("--primary", accent);
-    document.documentElement.style.setProperty("--user-bubble", `hsl(${accent})`);
     return () => {
       document.body.classList.remove("ms-theme");
     };
-  }, [accent]);
-
-  const changeAccent = useCallback((hsl: string) => {
-    document.documentElement.style.setProperty("--primary", hsl);
-    document.documentElement.style.setProperty("--user-bubble", `hsl(${hsl})`);
-    localStorage.setItem("accent", hsl);
-    localStorage.setItem("userBubbleColor", `hsl(${hsl})`);
-    setAccent(hsl);
   }, []);
 
   const changeMode = useCallback((m: SendMode) => {
     setSendMode(m);
     setMode(m);
   }, []);
-
-  const active = ACCENTS.find((c) => c.hsl === accent) ?? ACCENTS[0];
 
   return (
     <div className="apv2-root">
@@ -59,46 +28,11 @@ const CustomizationPage = () => {
         <button className="apv2-back" onClick={goBack} aria-label="Back">
           <ArrowLeft className="w-5 h-5" />
         </button>
-        <h1 className="apv2-title">Appearance</h1>
+        <h1 className="apv2-title">Composer</h1>
         <div className="apv2-spacer" />
       </header>
 
       <main className="apv2-main">
-        {/* Hero preview */}
-        <section className="apv2-hero" style={{ ["--ac" as any]: active.hex }}>
-          <div className="apv2-hero-name">{active.name}</div>
-          <div className="apv2-preview">
-            <div className="apv2-bubble apv2-in">How does this look?</div>
-            <div className="apv2-bubble apv2-out">Beautiful.</div>
-          </div>
-        </section>
-
-        {/* Accent grid */}
-        <section className="apv2-section">
-          <div className="apv2-section-head">
-            <div>
-              <div className="apv2-section-title">Accent color</div>
-              <div className="apv2-section-sub">Applied to buttons and your bubbles.</div>
-            </div>
-          </div>
-          <div className="apv2-card">
-            <div className="apv2-grid">
-              {ACCENTS.map((c) => {
-                const on = c.hsl === accent;
-                return (
-                  <button
-                    key={c.hex}
-                    onClick={() => changeAccent(c.hsl)}
-                    aria-label={c.name}
-                    className={`apv2-swatch ${on ? "is-on" : ""}`}
-                    style={{ background: c.hex }}
-                  />
-                );
-              })}
-            </div>
-          </div>
-        </section>
-
         {/* Composer */}
         <section className="apv2-section">
           <div className="apv2-section-head">
