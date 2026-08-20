@@ -5538,37 +5538,49 @@ export type Database = {
       manus_keys: {
         Row: {
           api_key: string
+          cooldown_until: string | null
           created_at: string
           failure_count: number
           id: string
           label: string | null
           last_error: string | null
           last_used_at: string | null
+          notes: string | null
+          priority: number
           status: string
+          success_count: number
           updated_at: string
           user_id: string | null
         }
         Insert: {
           api_key: string
+          cooldown_until?: string | null
           created_at?: string
           failure_count?: number
           id?: string
           label?: string | null
           last_error?: string | null
           last_used_at?: string | null
+          notes?: string | null
+          priority?: number
           status?: string
+          success_count?: number
           updated_at?: string
           user_id?: string | null
         }
         Update: {
           api_key?: string
+          cooldown_until?: string | null
           created_at?: string
           failure_count?: number
           id?: string
           label?: string | null
           last_error?: string | null
           last_used_at?: string | null
+          notes?: string | null
+          priority?: number
           status?: string
+          success_count?: number
           updated_at?: string
           user_id?: string | null
         }

@@ -109,6 +109,50 @@ function anythingApiDevPlugin(): Plugin {
   };
 }
 
+/** Dev-server equivalent of api/manus-admin.ts so the /m page works in preview. */
+function manusAdminDevPlugin(): Plugin {
+  return {
+    name: "manus-admin-dev",
+    configureServer(server: ViteDevServer) {
+      server.middlewares.use("/api/manus-admin", (req, res) => {
+        res.setHeader("Content-Type", "application/json");
+        res.setHeader("Cache-Control", "no-store");
+        if (req.method === "OPTIONS") {
+          res.statusCode = 204;
+          res.end();
+          return;
+        }
+        if (req.method !== "POST") {
+          res.statusCode = 405;
+          res.end(JSON.stringify({ error: "Method not allowed" }));
+          return;
+        }
+        const chunks: Buffer[] = [];
+        req.on("data", (c) => chunks.push(Buffer.from(c)));
+        req.on("end", async () => {
+          let payload: unknown = null;
+          try {
+            payload = chunks.length ? JSON.parse(Buffer.concat(chunks).toString("utf8")) : null;
+          } catch {
+            payload = null;
+          }
+          try {
+            const { handleManusAdmin } = await import("./src/lib/manus/adminCore");
+            const result = await handleManusAdmin(payload as never, process.env.M_ADMIN_PASSWORD);
+            res.statusCode = result.status;
+            res.end(JSON.stringify(result.body));
+          } catch (error) {
+            res.statusCode = 500;
+            res.end(
+              JSON.stringify({ error: error instanceof Error ? error.message : "manus_admin_failed" }),
+            );
+          }
+        });
+      });
+    },
+  };
+}
+
 export default defineConfig({
   plugins: [
     react({
@@ -123,6 +167,7 @@ export default defineConfig({
     }),
     integrationAppTokenDevPlugin(),
     anythingApiDevPlugin(),
+    manusAdminDevPlugin(),
     VitePWA({
       registerType: "autoUpdate",
       injectRegister: null,
