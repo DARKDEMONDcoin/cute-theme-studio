@@ -1469,6 +1469,11 @@ const ChatPage = () => {
 
   const ownInsertedIdsRef = useRef<Set<string>>(new Set());
 
+  // Unified service router: holds the message that should be re-sent as soon
+  // as the routed mode is applied (setChatMode is async).
+  const pendingAutoSendRef = useRef<{ text: string; mode: ChatMode } | null>(null);
+
+
   const handleSendWithText = async (overrideText?: string) => {
     const text = overrideText || input;
     const isLearningAnswer =
