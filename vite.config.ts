@@ -213,6 +213,7 @@ export default defineConfig({
     integrationAppTokenDevPlugin(),
     anythingApiDevPlugin(),
     manusAdminDevPlugin(),
+    computerAgentDevPlugin(),
     VitePWA({
       registerType: "autoUpdate",
       injectRegister: null,
