@@ -493,6 +493,28 @@ const DICT: Record<string, Entry> = {
     es: "Mínimo 8 caracteres.",
     fr: "Au moins 8 caractères.",
   },
+  regionQuestion: {
+    en: "Where are you billed from?",
+    ar: "هل أنت من العالم العربي؟",
+    "ar-eg": "إنت من العالم العربي؟",
+    es: "¿Desde dónde pagas?",
+    fr: "D'où êtes-vous facturé ?",
+  },
+  regionArab: {
+    en: "Arab world",
+    ar: "العالم العربي",
+    "ar-eg": "العالم العربي",
+    es: "Mundo árabe",
+    fr: "Monde arabe",
+  },
+  regionGlobal: {
+    en: "International",
+    ar: "دولي",
+    "ar-eg": "دولي",
+    es: "Internacional",
+    fr: "International",
+  },
+
   twoFATitle: {
     en: "Two-factor verification",
     ar: "التحقق بخطوتين",
