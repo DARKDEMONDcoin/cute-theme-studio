@@ -1,6 +1,6 @@
 /** @doc Official skills library — browse and add curated skills. */
 import { useState } from "react";
-import { Search, Check, Plus, Loader2 } from "lucide-react";
+import { Search, Check, Plus, Loader2, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useSkills, type Skill } from "@/hooks/useSkills";
@@ -57,59 +57,69 @@ export default function SkillsLibraryPage() {
       subtitle="Ready-made skills maintained by Megsy."
       backTo="/settings/skills"
     >
-      <div className="flex items-center gap-2 h-11 px-4 rounded-full bg-muted/60 border border-border">
-        <Search className="w-4 h-4 text-muted-foreground shrink-0" />
+      <div className="flex items-center gap-2 h-11 px-4 rounded-[14px] bg-[var(--mn-card)]">
+        <Search className="w-4 h-4 text-[color:var(--mn-muted)] shrink-0" />
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search"
-          className="flex-1 min-w-0 bg-transparent outline-none text-[14px] text-foreground placeholder:text-muted-foreground"
+          placeholder="Search library"
+          className="flex-1 min-w-0 bg-transparent outline-none text-[14px] text-[color:var(--mn-fg)] placeholder:text-[color:var(--mn-muted)]"
         />
       </div>
 
       {loading && items.length === 0 ? (
-        <div className="flex items-center justify-center py-16 rounded-2xl bg-card border border-border">
-          <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+        <div className="space-y-2.5">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="h-[74px] rounded-[14px] bg-[var(--mn-card)] animate-pulse" />
+          ))}
         </div>
       ) : items.length === 0 ? (
-        <div className="text-center py-14 rounded-2xl bg-card border border-border">
-          <p className="text-[15px] font-semibold text-card-foreground">No skills found</p>
-          <p className="text-[12.5px] mt-2 text-muted-foreground">Try a different search.</p>
+        <div className="text-center py-14 px-6 rounded-[14px] bg-[var(--mn-card)]">
+          <div className="mx-auto w-11 h-11 rounded-full bg-[color:var(--mn-sep)] grid place-items-center mb-3">
+            <Search className="w-5 h-5 text-[color:var(--mn-muted)]" />
+          </div>
+          <p className="text-[15px] font-semibold text-[color:var(--mn-fg)]">No skills found</p>
+          <p className="text-[12.5px] mt-1.5 text-[color:var(--mn-muted)]">Try a different search.</p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-2.5">
           {items.map((s) => {
             const installed = mySkills.some((m) => m.name === s.name);
             return (
               <div
                 key={s.id}
-                className="flex items-start gap-3 p-4 rounded-2xl bg-card border border-border"
+                className="flex items-center gap-3 px-4 py-3.5 rounded-[14px] bg-[var(--mn-card)]"
               >
+                <div className="shrink-0 w-10 h-10 rounded-full bg-primary/15 text-primary grid place-items-center">
+                  <ShieldCheck className="w-[18px] h-[18px]" />
+                </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[15px] font-semibold text-card-foreground truncate">
+                  <p className="text-[14.5px] font-semibold text-[color:var(--mn-fg)] truncate">
                     {s.name}
                   </p>
                   {s.description && (
-                    <p className="mt-1.5 text-[13px] leading-snug text-muted-foreground line-clamp-2">
+                    <p className="mt-0.5 text-[12.5px] leading-snug text-[color:var(--mn-muted)] line-clamp-2">
                       {s.description}
                     </p>
                   )}
                 </div>
                 {installed ? (
-                  <span className="shrink-0 w-9 h-9 grid place-items-center text-primary">
-                    <Check className="w-5 h-5" strokeWidth={2.4} />
+                  <span className="shrink-0 inline-flex items-center gap-1 h-8 px-3 rounded-full text-[12px] font-semibold text-primary bg-primary/10">
+                    <Check className="w-3.5 h-3.5" strokeWidth={2.6} /> Added
                   </span>
                 ) : (
                   <button
                     aria-label={`Add ${s.name}`}
                     disabled={busy === s.id}
                     onClick={() => add(s)}
-                    className="shrink-0 w-9 h-9 rounded-xl grid place-items-center border border-border text-foreground hover:bg-muted transition-colors disabled:opacity-50"
+                    className="shrink-0 h-8 px-3.5 rounded-full grid place-items-center bg-[color:var(--mn-sep)] text-[color:var(--mn-fg)] hover:opacity-80 transition-opacity disabled:opacity-50 text-[12px] font-semibold"
                   >
                     {busy === s.id ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
-                      <Plus className="w-4 h-4" />
+                      <span className="inline-flex items-center gap-1">
+                        <Plus className="w-3.5 h-3.5" /> Add
+                      </span>
                     )}
                   </button>
                 )}

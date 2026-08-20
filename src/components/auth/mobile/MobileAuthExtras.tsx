@@ -27,6 +27,8 @@ interface Props {
   countdown: number;
   onResendOtp: () => void;
   onSubmitSetPassword: () => void;
+  region?: "arab" | "global";
+  setRegion?: (r: "arab" | "global") => void;
   onSubmitResetPassword: () => void;
   onSubmitForgotPassword: () => void;
   onBack: () => void;
@@ -249,6 +251,31 @@ export default function MobileAuthExtras(p: Props) {
                   >
                     {p.showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
+                </div>
+              )}
+
+              {p.screen === "set-password" && p.setRegion && (
+                <div className="pt-1">
+                  <p className="text-[12.5px] text-foreground/55 mb-2 px-1">
+                    {authT("regionQuestion")}
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {(["arab", "global"] as const).map((r) => (
+                      <button
+                        key={r}
+                        type="button"
+                        onClick={() => p.setRegion?.(r)}
+                        className={`rounded-2xl h-[52px] text-[14px] font-medium transition-colors ${
+                          p.region === r
+                            ? "bg-foreground text-background"
+                            : "text-foreground/80"
+                        }`}
+                        style={p.region === r ? undefined : fieldStyle}
+                      >
+                        {r === "arab" ? authT("regionArab") : authT("regionGlobal")}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               )}
 

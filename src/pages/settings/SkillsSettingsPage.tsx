@@ -1,7 +1,19 @@
 /** @doc Browse and manage installed skills. */
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { ArrowLeft, ArrowUp, Pencil, Trash2, X, Plus, Paperclip, Loader2, Sparkles, Search, SlidersHorizontal, ShieldCheck, ChevronRight, MoreHorizontal } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowUp,
+  Trash2,
+  X,
+  Plus,
+  Paperclip,
+  Loader2,
+  Sparkles,
+  Search,
+  ShieldCheck,
+  ChevronRight,
+} from "lucide-react";
 import { m as motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -14,7 +26,7 @@ import { Switch } from "@/components/ui/switch";
 import MegsyStar from "@/components/files/MegsyStar";
 // (goBackOr no longer needed — SubShell handles back nav)
 import { getActiveWorkspaceId } from "@/lib/activeWorkspace";
-import { SubShell, SubSection, SubCard, SubStatStrip } from "@/components/settings/SubShell";
+import { SubShell } from "@/components/settings/SubShell";
 import { cn } from "@/lib/utils";
 import { SkillsAddMenu } from "./components/SkillsExtras";
 
@@ -56,7 +68,7 @@ export default function SkillsSettingsPage() {
   const [importing, setImporting] = useState(false);
   const [triggerInput, setTriggerInput] = useState("");
   const [query, setQuery] = useState("");
-  const [onlyEnabled, setOnlyEnabled] = useState(false);
+  const [tab, setTab] = useState<"all" | "enabled">("all");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Open the designer when arriving with a seed prompt from /settings/skills/new
@@ -265,20 +277,21 @@ export default function SkillsSettingsPage() {
   }
 
   // ===== List view =====
+  const q = query.trim().toLowerCase();
   const filtered = mySkills.filter((s) => {
-    const q = query.trim().toLowerCase();
     if (!q) return true;
     return (
       s.name.toLowerCase().includes(q) ||
       (s.description || "").toLowerCase().includes(q)
     );
   });
-  const visible = onlyEnabled ? filtered.filter((s) => s.is_enabled !== false) : filtered;
+  const visible = tab === "enabled" ? filtered.filter((s) => s.is_enabled !== false) : filtered;
+  const enabledCount = mySkills.filter((s) => s.is_enabled !== false).length;
 
   return (
     <SubShell
       title="Skills"
-      subtitle="Design experts Megsy calls automatically inside chat."
+      subtitle="Experts Megsy calls automatically inside chat."
       action={
         <SkillsAddMenu
           onCreateWithMegsy={() => navigate("/settings/skills/new")}
@@ -303,54 +316,72 @@ export default function SkillsSettingsPage() {
         }}
       />
 
-      {/* Search + filter */}
-      <div className="flex items-center gap-2 pt-1">
-        <div className="flex-1 flex items-center gap-2 h-11 px-4 rounded-full bg-muted/60 border border-border">
-          <Search className="w-4 h-4 text-muted-foreground shrink-0" />
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search"
-            className="flex-1 min-w-0 bg-transparent outline-none text-[14px] text-foreground placeholder:text-muted-foreground"
-          />
+      {/* Search */}
+      <div className="flex items-center gap-2 h-11 px-4 rounded-[14px] bg-[var(--mn-card)]">
+        <Search className="w-4 h-4 text-[color:var(--mn-muted)] shrink-0" />
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search skills"
+          className="flex-1 min-w-0 bg-transparent outline-none text-[14px] text-[color:var(--mn-fg)] placeholder:text-[color:var(--mn-muted)]"
+        />
+      </div>
+
+      {/* Tabs + official library */}
+      <div className="flex items-center gap-2">
+        <div className="flex-1 flex items-center gap-1 h-10 p-1 rounded-full bg-[var(--mn-card)]">
+          {(
+            [
+              { id: "all" as const, label: "All", count: mySkills.length },
+              { id: "enabled" as const, label: "Enabled", count: enabledCount },
+            ]
+          ).map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setTab(t.id)}
+              className={cn(
+                "flex-1 h-8 rounded-full text-[12.5px] font-semibold transition-colors",
+                tab === t.id
+                  ? "bg-[color:var(--mn-fg)] text-[var(--mn-card)]"
+                  : "text-[color:var(--mn-muted)]",
+              )}
+            >
+              {t.label} {t.count > 0 && <span className="tabular-nums opacity-70">{t.count}</span>}
+            </button>
+          ))}
         </div>
         <button
-          onClick={() => setOnlyEnabled((v) => !v)}
-          aria-label="Filter enabled skills"
-          className={cn(
-            "shrink-0 w-11 h-11 rounded-full grid place-items-center border transition-colors",
-            onlyEnabled
-              ? "bg-primary text-primary-foreground border-transparent"
-              : "bg-muted/60 text-foreground border-border",
-          )}
+          onClick={() => navigate("/settings/skills/library")}
+          className="shrink-0 flex items-center gap-2 h-10 px-3.5 rounded-full bg-[var(--mn-card)] text-[12.5px] font-medium text-[color:var(--mn-fg)]"
         >
-          <SlidersHorizontal className="w-4 h-4" />
+          <ShieldCheck className="w-3.5 h-3.5 text-[color:var(--mn-muted)]" />
+          Library
+          <ChevronRight className="w-3.5 h-3.5 text-[color:var(--mn-faint,var(--mn-muted))]" />
         </button>
       </div>
 
-      {/* Official library row */}
-      <button
-        onClick={() => navigate("/settings/skills/library")}
-        className="w-full flex items-center gap-3 px-4 h-[58px] rounded-2xl bg-card border border-border text-left transition-colors hover:bg-muted/50"
-      >
-        <ShieldCheck className="w-[18px] h-[18px] text-muted-foreground shrink-0" />
-        <span className="flex-1 text-[15px] font-medium text-card-foreground">
-          Official library
-        </span>
-        <span className="text-[12px] text-muted-foreground">{librarySkills.length}</span>
-        <ChevronRight className="w-4 h-4 text-muted-foreground" />
-      </button>
-
       {/* My skills */}
       {loading ? (
-        <div className="flex items-center justify-center py-16 rounded-2xl bg-card border border-border">
-          <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+        <div className="space-y-3">
+          {[0, 1, 2].map((i) => (
+            <div
+              key={i}
+              className="h-[92px] rounded-[14px] bg-[var(--mn-card)] animate-pulse"
+            />
+          ))}
         </div>
       ) : visible.length === 0 ? (
-        <div className="text-center py-14 px-6 rounded-2xl bg-card border border-border">
-          <p className="text-[15px] font-semibold text-card-foreground">No skills yet</p>
-          <p className="text-[12.5px] mt-2 text-muted-foreground">
-            Create your first expert, or add one from the official library.
+        <div className="text-center py-14 px-6 rounded-[14px] bg-[var(--mn-card)]">
+          <div className="mx-auto w-11 h-11 rounded-full bg-[color:var(--mn-sep)] grid place-items-center mb-3">
+            <Sparkles className="w-5 h-5 text-[color:var(--mn-muted)]" />
+          </div>
+          <p className="text-[15px] font-semibold text-[color:var(--mn-fg)]">
+            {tab === "enabled" ? "No enabled skills" : "No skills yet"}
+          </p>
+          <p className="text-[12.5px] mt-1.5 text-[color:var(--mn-muted)] max-w-[280px] mx-auto leading-relaxed">
+            {tab === "enabled"
+              ? "Enable a skill below, or create a new one."
+              : "Create your first expert, or add one from the official library."}
           </p>
           <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
             <button
@@ -361,14 +392,14 @@ export default function SkillsSettingsPage() {
             </button>
             <button
               onClick={() => navigate("/settings/skills/library")}
-              className="inline-flex items-center gap-1.5 h-9 px-4 rounded-full text-[13px] font-medium border border-border text-foreground"
+              className="inline-flex items-center gap-1.5 h-9 px-4 rounded-full text-[13px] font-medium bg-[color:var(--mn-sep)] text-[color:var(--mn-fg)]"
             >
               Official library
             </button>
           </div>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-2.5">
           {visible.map((s) => (
             <SkillRowCard
               key={s.id}
@@ -382,23 +413,41 @@ export default function SkillsSettingsPage() {
       )}
 
       {/* Inspiration */}
-      <div className="pt-2">
-        <p className="text-[10.5px] font-semibold uppercase tracking-[0.18em] mb-3 text-muted-foreground">
-          Inspiration
-        </p>
-        <div className="flex flex-wrap gap-2">
-          {SUGGESTIONS.slice(0, 6).map((s) => (
-            <button
-              key={s}
-              onClick={() => navigate("/settings/skills/new", { state: { seed: s } })}
-              className="inline-flex items-center gap-1.5 px-3 h-8 rounded-full text-[12.5px] border border-border text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <Sparkles className="w-3 h-3 text-primary" /> {s}
-            </button>
-          ))}
+      {visible.length > 0 && (
+        <div className="pt-1">
+          <p className="text-[10.5px] font-semibold uppercase tracking-[0.18em] mb-3 text-[color:var(--mn-muted)]">
+            Inspiration
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {SUGGESTIONS.slice(0, 6).map((s) => (
+              <button
+                key={s}
+                onClick={() => navigate("/settings/skills/new", { state: { seed: s } })}
+                className="inline-flex items-center gap-1.5 px-3 h-8 rounded-full text-[12.5px] bg-[var(--mn-card)] text-[color:var(--mn-muted)] hover:text-[color:var(--mn-fg)] transition-colors"
+              >
+                <Sparkles className="w-3 h-3 text-primary" /> {s}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
     </SubShell>
+  );
+}
+
+function SkillAvatar({ name, enabled }: { name: string; enabled: boolean }) {
+  const initial = (name.trim()[0] || "?").toUpperCase();
+  return (
+    <div
+      className={cn(
+        "shrink-0 w-10 h-10 rounded-full grid place-items-center text-[14px] font-semibold",
+        enabled
+          ? "bg-primary/15 text-primary"
+          : "bg-[color:var(--mn-sep)] text-[color:var(--mn-muted)]",
+      )}
+    >
+      {initial}
+    </div>
   );
 }
 
@@ -413,177 +462,49 @@ function SkillRowCard({
   onDelete: () => void;
   onToggle: (v: boolean) => void;
 }) {
-  const [menu, setMenu] = useState(false);
   const enabled = skill.is_enabled !== false;
-  const updated = (skill as unknown as { updated_at?: string; created_at?: string });
-  const dateStr = updated.updated_at || updated.created_at;
-  const formatted = dateStr
-    ? new Date(dateStr).toLocaleDateString(undefined, {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      })
-    : null;
 
-  return (
-    <div className="rounded-2xl bg-card border border-border overflow-hidden">
-      <div className="px-4 pt-4 pb-3">
-        <div className="flex items-start gap-3">
-          <div className="min-w-0 flex-1">
-            <p className="text-[15px] font-semibold text-card-foreground truncate">
-              {skill.name}
-            </p>
-            {skill.description && (
-              <p className="mt-1.5 text-[13px] leading-snug text-muted-foreground line-clamp-2">
-                {skill.description}
-              </p>
-            )}
-          </div>
-          <Switch checked={enabled} onCheckedChange={onToggle} className="mt-0.5 shrink-0" />
-        </div>
-      </div>
-      <div className="flex items-center gap-2 px-4 h-11 border-t border-border">
-        <ShieldCheck className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-        <span className="text-[12px] text-muted-foreground truncate">
-          {skill.source === "system" ? "Official" : "Custom"}
-          {formatted ? ` \u2022 Updated ${formatted}` : ""}
-        </span>
-        <span className="flex-1" />
-        <div className="relative">
-          <button
-            aria-label="Skill actions"
-            onClick={() => setMenu((v) => !v)}
-            className="w-8 h-8 -mr-2 rounded-full grid place-items-center text-muted-foreground hover:bg-muted transition-colors"
-          >
-            <MoreHorizontal className="w-4 h-4" />
-          </button>
-          {menu && (
-            <>
-              <div className="fixed inset-0 z-40" onClick={() => setMenu(false)} />
-              <div className="absolute bottom-9 right-0 z-50 min-w-[150px] rounded-xl bg-popover text-popover-foreground border border-border shadow-lg overflow-hidden">
-                <button
-                  onClick={() => {
-                    setMenu(false);
-                    onEdit();
-                  }}
-                  className="w-full flex items-center gap-2 px-3 h-10 text-[13px] hover:bg-muted transition-colors"
-                >
-                  <Pencil className="w-3.5 h-3.5" /> Edit
-                </button>
-                <button
-                  onClick={() => {
-                    setMenu(false);
-                    onDelete();
-                  }}
-                  className="w-full flex items-center gap-2 px-3 h-10 text-[13px] text-destructive hover:bg-muted transition-colors"
-                >
-                  <Trash2 className="w-3.5 h-3.5" /> Delete
-                </button>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-
-function SkillCardIndigo({
-  skill,
-  onEdit,
-  onDelete,
-  onToggle,
-  indigo,
-  cardBg,
-  cardBorder,
-  inkSoft,
-  inkMute,
-  heading,
-}: {
-  skill: Skill;
-  onEdit: () => void;
-  onDelete: () => void;
-  onToggle: (v: boolean) => void;
-  indigo: string;
-  cardBg: string;
-  cardBorder: string;
-  inkSoft: string;
-  inkMute: string;
-  heading: React.CSSProperties;
-}) {
-  const enabled = skill.is_enabled !== false;
   return (
     <div
       className={cn(
-        "group relative rounded-2xl p-4 transition-colors",
-        enabled ? "" : "opacity-55",
+        "rounded-[14px] bg-[var(--mn-card)] px-4 py-3.5 transition-opacity",
+        !enabled && "opacity-70",
       )}
-      style={{
-        backgroundColor: cardBg,
-        border: `1px solid ${enabled ? "rgba(79,70,229,0.25)" : cardBorder}`,
-      }}
     >
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <span
-              className="h-1.5 w-1.5 rounded-full"
-              style={{ backgroundColor: enabled ? indigo : "var(--overlay-white-20)" }}
-            />
-            <p className="text-[14px] font-semibold text-foreground truncate" style={heading}>
+      <div className="flex items-start gap-3">
+        <SkillAvatar name={skill.name} enabled={enabled} />
+        <button onClick={onEdit} className="min-w-0 flex-1 text-left">
+          <div className="flex items-center gap-1.5">
+            <p className="text-[14.5px] font-semibold text-[color:var(--mn-fg)] truncate">
               {skill.name}
             </p>
+            {skill.source === "system" && (
+              <ShieldCheck className="w-3.5 h-3.5 text-[color:var(--mn-muted)] shrink-0" />
+            )}
           </div>
-          {skill.description && (
-            <p
-              className="text-[12.5px] line-clamp-3 mt-1.5 leading-snug"
-              style={{ color: inkSoft }}
-            >
+          {skill.description ? (
+            <p className="mt-0.5 text-[12.5px] leading-snug text-[color:var(--mn-muted)] line-clamp-2">
               {skill.description}
             </p>
+          ) : (
+            <p className="mt-0.5 text-[12.5px] text-[color:var(--mn-muted)]/70 italic">
+              No description
+            </p>
           )}
-          {skill.triggers && skill.triggers.length > 0 && (
-            <div className="flex flex-wrap gap-1 mt-2.5">
-              {skill.triggers.slice(0, 4).map((t, i) => (
-                <span
-                  key={i}
-                  className="inline-flex items-center h-5 px-1.5 rounded text-[10.5px] font-medium"
-                  style={{
-                    backgroundColor: "rgba(79,70,229,0.12)",
-                    color: "rgba(167,163,255,0.85)",
-                  }}
-                >
-                  /{t}
-                </span>
-              ))}
-              {skill.triggers.length > 4 && (
-                <span
-                  className="inline-flex items-center h-5 px-1.5 rounded text-[10.5px] font-medium"
-                  style={{ backgroundColor: "var(--overlay-white-06)", color: inkMute }}
-                >
-                  +{skill.triggers.length - 4}
-                </span>
-              )}
-            </div>
-          )}
-        </div>
-        <Switch checked={enabled} onCheckedChange={onToggle} />
+        </button>
+        <Switch checked={enabled} onCheckedChange={onToggle} className="mt-0.5 shrink-0" />
       </div>
-      <div className="mt-3 flex items-center justify-end gap-1">
+      <div className="mt-3 flex items-center justify-end gap-1 -mb-1 -mr-1.5">
         <button
           onClick={onEdit}
-          className="grid h-8 w-8 place-items-center rounded-lg transition-all hover:bg-white/[0.06]"
-          style={{ color: inkSoft }}
-          aria-label="Edit"
+          className="h-7 px-2.5 rounded-full text-[12px] font-medium text-[color:var(--mn-muted)] hover:text-[color:var(--mn-fg)] hover:bg-[color:var(--mn-sep)] transition-colors"
         >
-          <Pencil className="w-3.5 h-3.5" />
+          Edit
         </button>
         <button
           onClick={onDelete}
-          className="grid h-8 w-8 place-items-center rounded-lg transition-all hover:bg-rose-500/10 hover:text-rose-400"
-          style={{ color: inkMute }}
-          aria-label="Delete"
+          aria-label="Delete skill"
+          className="h-7 w-7 rounded-full grid place-items-center text-[color:var(--mn-muted)] hover:text-[color:var(--mn-danger)] hover:bg-[color:var(--mn-sep)] transition-colors"
         >
           <Trash2 className="w-3.5 h-3.5" />
         </button>
@@ -591,9 +512,6 @@ function SkillCardIndigo({
     </div>
   );
 }
-
-
-
 
 
 // ===========================================================================

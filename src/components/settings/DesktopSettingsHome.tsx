@@ -2,6 +2,7 @@ import { useEffect, useState, type FC, type SVGProps } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronRight, Sparkles, Globe, Brain } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useConfirm } from "@/components/common/ConfirmDialog";
 import { useActiveAccount } from "@/hooks/useActiveAccount";
 import { translateExactText, useUserLang, AVAILABLE_LANGS } from "@/lib/authI18n";
 import OliveAvatar from "@/components/branding/OliveAvatar";
@@ -58,7 +59,15 @@ export function DesktopSettingsHome() {
   const currentLangLabel =
     AVAILABLE_LANGS.find((l) => l.code === lang)?.native ?? "English";
 
+  const confirm = useConfirm();
+
   const handleLogout = async () => {
+    const ok = await confirm({
+      title: "Log out",
+      description: "You'll need to sign in again to access your chats.",
+      confirmLabel: "Log out",
+    });
+    if (!ok) return;
     await supabase.auth.signOut();
     go("/auth");
   };
@@ -74,7 +83,7 @@ export function DesktopSettingsHome() {
     {
       title: tx("Preferences"),
       rows: [
-        { icon: AppearanceIcon, label: tx("Appearance"), path: "/settings/customization" },
+        { icon: AppearanceIcon, label: tx("Composer"), path: "/settings/customization" },
         { icon: (p) => <Brain {...p} />, label: tx("Memory"), path: "/settings/memory" },
         { icon: IntegrationsIcon, label: tx("Integrations"), path: "/chat?integrations=1" },
         { icon: IntegrationsIcon, label: tx("MCP Servers"), path: "/settings/mcp" },

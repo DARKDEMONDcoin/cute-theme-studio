@@ -26,6 +26,7 @@ import {
 } from "@/data/pricingData";
 import { brandText, getZoneBrand } from "@/lib/zoneBrand";
 import { isEgMode } from "@/lib/egMode";
+import { isArabBilling } from "@/lib/payRegion";
 import { translateExactText, useUserLang } from "@/lib/authI18n";
 
 const LandingFooter = lazy(() => import("@/components/landing/LandingFooter"));
@@ -282,8 +283,8 @@ const PricingPage = () => {
       return;
     }
 
-    // Egypt edition: Kashier only (Visa card + Vodafone Cash) — show the picker.
-    if (isEgMode()) {
+    // Egypt edition or an Arabic account: Kashier (card + wallets) — show the picker.
+    if (isEgMode() || isArabBilling()) {
       setGatewaySheet({ tier, interval, trial: opts.trial === true });
       return;
     }
@@ -343,7 +344,7 @@ const PricingPage = () => {
             body: {
               sku,
               method,
-              display: isEgMode() ? "ar" : "en",
+              display: isEgMode() || isArabBilling() ? "ar" : "en",
             },
           },
         );

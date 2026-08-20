@@ -7,6 +7,7 @@ import { invokeFunction } from "@/lib/supabaseFunction";
 import { toast } from "sonner";
 import { Eye, EyeOff, ArrowLeft, ArrowRight, Check, Play } from "lucide-react";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
+import { setPayRegion, type PayRegion } from "@/lib/payRegion";
 import SEOHead from "@/components/common/SEOHead";
 import { useIsMobile } from "@/hooks/use-mobile";
 import MobileAuthIntro from "@/components/mobile-showcase/MobileAuthIntro";
@@ -57,6 +58,7 @@ const AuthPage = () => {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [newPassword, setNewPassword] = useState("");
+  const [region, setRegion] = useState<PayRegion>("global");
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [otpValues, setOtpValues] = useState(["", "", "", "", "", ""]);
   const [verifiedResetCode, setVerifiedResetCode] = useState("");
@@ -490,6 +492,7 @@ const AuthPage = () => {
       const cleanReferral = referralCode.trim().toUpperCase().slice(0, 64) || null;
 
       const normalizedEmail = email.trim().toLowerCase();
+      setPayRegion(region);
       const { data, error } = await invokeAuth({
         action: "signup",
         email: normalizedEmail,
@@ -794,6 +797,8 @@ const AuthPage = () => {
           isSubmitting={isSubmitting}
           countdown={countdown}
           onResendOtp={() => sendOTP(undefined, step === "otp-signup")}
+          region={region}
+          setRegion={setRegion}
           onSubmitSetPassword={handleCreateAccount}
           onSubmitResetPassword={handleResetPassword}
           onSubmitForgotPassword={handleForgotPassword}
@@ -1162,6 +1167,27 @@ const AuthPage = () => {
                             <Eye className="w-4 h-4" />
                           )}
                         </button>
+                      </div>
+                      <div>
+                        <p className="text-[12.5px] text-foreground/55 mb-2">
+                          {authT("regionQuestion")}
+                        </p>
+                        <div className="grid grid-cols-2 gap-2">
+                          {(["arab", "global"] as const).map((r) => (
+                            <button
+                              key={r}
+                              type="button"
+                              onClick={() => setRegion(r)}
+                              className={`h-[46px] rounded-xl text-[14px] font-medium border transition-colors ${
+                                region === r
+                                  ? "bg-foreground text-background border-transparent"
+                                  : "border-border/70 text-foreground/80 hover:border-foreground/40"
+                              }`}
+                            >
+                              {r === "arab" ? authT("regionArab") : authT("regionGlobal")}
+                            </button>
+                          ))}
+                        </div>
                       </div>
                       <button
                         onClick={handleCreateAccount}
