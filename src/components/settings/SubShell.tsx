@@ -17,13 +17,16 @@ interface SubShellProps {
   title: string;
   subtitle?: string;
   backTo?: string;
+  onBack?: () => void;
   action?: ReactNode;
   children: ReactNode;
 }
 
-export function SubShell({ title, subtitle, backTo = "/settings", action, children }: SubShellProps) {
+export function SubShell({ title, subtitle, backTo = "/settings", onBack, action, children }: SubShellProps) {
   const isMobile = useIsMobile();
-  const goBack = useSmartBack(backTo);
+  const smartBack = useSmartBack(backTo);
+  const goBack = onBack ?? smartBack;
+
 
   if (!isMobile) {
     return (

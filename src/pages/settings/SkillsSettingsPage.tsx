@@ -2,7 +2,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
-  ArrowLeft,
   ArrowUp,
   Trash2,
   X,
@@ -26,7 +25,9 @@ import { Switch } from "@/components/ui/switch";
 import MegsyStar from "@/components/files/MegsyStar";
 // (goBackOr no longer needed — SubShell handles back nav)
 import { getActiveWorkspaceId } from "@/lib/activeWorkspace";
-import { SubShell } from "@/components/settings/SubShell";
+import { SubShell, SubCard, SubSection } from "@/components/settings/SubShell";
+import { useConfirm } from "@/components/common/ConfirmDialog";
+
 import { cn } from "@/lib/utils";
 import { SkillsAddMenu } from "./components/SkillsExtras";
 
@@ -60,6 +61,8 @@ const SUGGESTIONS = [
 
 export default function SkillsSettingsPage() {
   const navigate = useNavigate();
+  const confirmDialog = useConfirm();
+
   const location = useLocation();
   const { mySkills, librarySkills, loading, reload, toggleEnabled } = useSkills();
   const [editing, setEditing] = useState<DraftSkill | null>(null);
@@ -153,8 +156,17 @@ export default function SkillsSettingsPage() {
     reload();
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Delete this skill?")) return;
+  const handleDelete = async (id: string, name?: string) => {
+    const ok = await confirmDialog({
+      title: "Delete this skill?",
+      description: name
+        ? `"${name}" will be removed from your workspace. This can't be undone.`
+        : "This skill will be removed from your workspace. This can't be undone.",
+      confirmLabel: "Delete",
+      tone: "danger",
+    });
+    if (!ok) return;
+
     const { error } = await supabase.from("skills").delete().eq("id", id);
     if (error) {
       toast.error(sanitizeErrorMessage(error, "Something went wrong"));
@@ -405,7 +417,7 @@ export default function SkillsSettingsPage() {
               key={s.id}
               skill={s}
               onEdit={() => startEdit(s)}
-              onDelete={() => handleDelete(s.id)}
+              onDelete={() => handleDelete(s.id, s.name)}
               onToggle={(v) => toggleEnabled(s, v)}
             />
           ))}
@@ -703,51 +715,55 @@ function SkillDesigner({
   ]);
 
   return (
-    <div className="min-h-dvh bg-background flex flex-col">
-      <header className="sticky top-0 z-20 bg-background/85 backdrop-blur-xl border-b border-border/30">
-        <div className="max-w-5xl mx-auto px-4 h-14 flex items-center gap-3">
-          <button
-            onClick={onClose}
-            className="p-2 -ml-2 rounded-xl hover:bg-accent/60 transition-colors"
+    <SubShell
+      title={isEdit ? draft.name || "Edit skill" : "Design a skill"}
+      subtitle={
+        saving
+          ? "Saving…"
+          : hasDraft
+            ? "Changes save automatically."
+            : "Tell Megsy what expert you need and it drafts the skill."
+      }
+      onBack={onClose}
+      action={
+        <button
+          onClick={onClose}
+          className="h-9 px-4 rounded-full text-[13px] font-semibold bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
+        >
+          Done
+        </button>
+      }
+    >
+      {/* Designer chat */}
+      <SubSection
+        title="Designer"
+        description="Describe or refine the skill in plain language."
+      >
+        <SubCard flush>
+          <div
+            ref={scrollRef}
+            className="min-h-[200px] max-h-[46vh] overflow-y-auto px-4 py-4 space-y-4"
           >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <div className="flex-1" />
-          <div className="text-[11.5px] text-muted-foreground tabular-nums">
-            {saving ? "Saving…" : hasDraft ? "Saved" : ""}
-          </div>
-        </div>
-      </header>
-
-      <div className="flex-1 max-w-5xl w-full mx-auto grid lg:grid-cols-[1fr_400px] gap-0 lg:gap-6 lg:px-4 lg:py-4">
-        {/* Chat panel */}
-        <section className="flex flex-col h-[calc(100dvh-3.5rem)] lg:h-[calc(100dvh-5rem)] lg:rounded-2xl lg:border lg:border-border/30 lg:bg-card/30 flex">
-          <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-6 space-y-5">
             {messages.map((m, i) => (
-              <div
-                key={i}
-                className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}
-              >
+              <div key={i} className={cn("flex", m.role === "user" ? "justify-end" : "justify-start")}>
                 {m.role === "user" ? (
-                  <div className="max-w-[85%] rounded-2xl rounded-br-md px-4 py-2.5 bg-primary text-primary-foreground text-[14px] whitespace-pre-wrap leading-relaxed">
+                  <div className="max-w-[85%] rounded-[16px] rounded-br-[6px] px-3.5 py-2.5 bg-primary text-primary-foreground text-[13.5px] whitespace-pre-wrap leading-relaxed">
                     {m.content}
                   </div>
                 ) : (
-                  <div className="max-w-[92%] w-full">
-                    <div className="flex items-start gap-2.5">
-                      <div className="shrink-0 mt-0.5">
-                        <MegsyStar size={20} static />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[14px] whitespace-pre-wrap text-foreground leading-relaxed">
-                          {m.content}
-                        </p>
-                        {m.draft && (
-                          <div className="mt-2.5 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-[12px] font-medium">
-                            Draft ready · {m.draft.name}
-                          </div>
-                        )}
-                      </div>
+                  <div className="flex items-start gap-2.5 w-full">
+                    <div className="shrink-0 mt-0.5">
+                      <MegsyStar size={18} static />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[13.5px] whitespace-pre-wrap leading-relaxed text-[color:var(--mn-fg)]">
+                        {m.content}
+                      </p>
+                      {m.draft && (
+                        <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-[11.5px] font-semibold">
+                          <Sparkles className="w-3 h-3" /> Draft ready · {m.draft.name}
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -762,7 +778,7 @@ function SkillDesigner({
                   className="flex items-start gap-2.5"
                 >
                   <div className="shrink-0 mt-0.5">
-                    <MegsyStar size={20} static />
+                    <MegsyStar size={18} static />
                   </div>
                   <div className="flex-1">
                     <AnimatePresence mode="wait">
@@ -772,18 +788,19 @@ function SkillDesigner({
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -4 }}
                         transition={{ duration: 0.25 }}
-                        className="text-[14px] font-semibold bg-gradient-to-r from-white via-white/85 to-white/60 bg-clip-text text-transparent"
+                        className="text-[13.5px] font-semibold text-[color:var(--mn-fg)]"
                       >
                         {STAGES[stageIdx]}…
                       </motion.p>
                     </AnimatePresence>
-                    <div className="mt-1.5 flex gap-1">
+                    <div className="mt-2 flex gap-1">
                       {STAGES.map((_, i) => (
                         <span
                           key={i}
-                          className={`h-1 rounded-full transition-all ${
-                            i <= stageIdx ? "bg-primary w-6" : "bg-muted w-3"
-                          }`}
+                          className={cn(
+                            "h-1 rounded-full transition-all",
+                            i <= stageIdx ? "bg-primary w-6" : "bg-[color:var(--mn-sep)] w-3",
+                          )}
                         />
                       ))}
                     </div>
@@ -793,8 +810,8 @@ function SkillDesigner({
             </AnimatePresence>
           </div>
 
-          <div className="px-4 py-3 border-t border-border/30 bg-background/50">
-            <div className="relative rounded-2xl border border-border/60 bg-card focus-within:border-foreground/30 transition-colors">
+          <div className="border-t border-[color:var(--mn-sep)] p-2.5">
+            <div className="relative rounded-[12px] bg-[color:var(--mn-press,var(--mn-sep))]">
               <textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
@@ -810,11 +827,9 @@ function SkillDesigner({
                 }}
                 rows={1}
                 placeholder={
-                  hasDraft
-                    ? 'Refine the skill — e.g. "add SEO triggers", "make tone bolder"…'
-                    : "Describe the expert you want…"
+                  hasDraft ? "Refine it — \"make the tone bolder\"…" : "Describe the expert you want…"
                 }
-                className="w-full resize-none bg-transparent outline-none text-[14px] leading-relaxed pl-12 pr-4 pt-3 pb-12 max-h-32 placeholder:text-muted-foreground/70"
+                className="w-full resize-none bg-transparent outline-none text-[13.5px] leading-relaxed pl-11 pr-12 pt-3 pb-3 max-h-32 text-[color:var(--mn-fg)] placeholder:text-[color:var(--mn-muted)]"
               />
               <input
                 ref={zipInputRef}
@@ -831,148 +846,156 @@ function SkillDesigner({
                 onClick={() => zipInputRef.current?.click()}
                 disabled={importing}
                 aria-label="Import .zip"
-                title="Import a SKILL.md .zip"
-                className="absolute left-2.5 bottom-2.5 h-8 w-8 rounded-full hover:bg-accent/60 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+                className="absolute left-2 bottom-2 h-8 w-8 rounded-full flex items-center justify-center text-[color:var(--mn-muted)] hover:text-[color:var(--mn-fg)] transition-colors disabled:opacity-50"
               >
-                <Paperclip className="w-4 h-4" />
+                {importing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Paperclip className="w-4 h-4" />}
               </button>
               <button
                 onClick={send}
                 disabled={!input.trim() || thinking}
-                className="absolute right-2.5 bottom-2.5 h-8 w-8 rounded-full bg-foreground text-background flex items-center justify-center disabled:opacity-30 hover:scale-105 active:scale-95 transition-transform"
                 aria-label="Send"
+                className="absolute right-2 bottom-2 h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center disabled:opacity-30 active:scale-95 transition-transform"
               >
-                <ArrowUp className="w-4 h-4" />
+                <ArrowUp className="w-4 h-4" strokeWidth={2.5} />
               </button>
             </div>
           </div>
-        </section>
+        </SubCard>
+      </SubSection>
 
-        {/* Live draft preview / editor */}
-        <aside className="h-[calc(100dvh-3.5rem)] lg:h-[calc(100dvh-5rem)] overflow-y-auto px-4 lg:px-5 py-5 space-y-5 lg:rounded-2xl lg:border lg:border-border/30 lg:bg-card/30 hidden lg:block">
-          {!hasDraft ? (
-            <div className="h-full flex flex-col items-center justify-center text-center px-4">
-              <MegsyStar size={36} static />
-              <div className="text-[14px] font-semibold mt-4">Your skill will appear here</div>
-              <p className="text-[12.5px] text-muted-foreground mt-1.5 max-w-xs leading-relaxed">
-                Chat with the designer. Once it's drafted you can fine-tune every field and save.
-              </p>
-            </div>
-          ) : (
-            <>
-              <div className="flex items-center gap-2 text-[11px] uppercase tracking-wide text-muted-foreground">
-                <MegsyStar size={12} static /> Live draft
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                  Name
-                </Label>
+      {!hasDraft ? (
+        <SubCard className="text-center py-10">
+          <div className="mx-auto mb-3">
+            <MegsyStar size={28} static />
+          </div>
+          <p className="text-[14px] font-semibold text-[color:var(--mn-fg)]">
+            Your skill will appear here
+          </p>
+          <p className="mt-1.5 text-[12.5px] text-[color:var(--mn-muted)] max-w-[280px] mx-auto leading-relaxed">
+            Once Megsy drafts it, every field below becomes editable.
+          </p>
+        </SubCard>
+      ) : (
+        <>
+          <SubSection title="Identity" description="How this skill shows up in your library.">
+            <SubCard className="space-y-3.5">
+              <Field label="Name">
                 <Input
                   value={draft.name}
                   onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-                  className="h-10"
+                  className="h-10 bg-transparent border-[color:var(--mn-sep)] text-[13.5px]"
                 />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                  Description
-                </Label>
+              </Field>
+              <Field label="Description">
                 <Input
                   value={draft.description || ""}
                   onChange={(e) => setDraft({ ...draft, description: e.target.value })}
-                  className="h-10"
+                  placeholder="One line about what it does"
+                  className="h-10 bg-transparent border-[color:var(--mn-sep)] text-[13.5px]"
                 />
-              </div>
+              </Field>
+            </SubCard>
+          </SubSection>
 
-              <div className="space-y-1.5">
-                <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                  Triggers
-                </Label>
-                <div className="flex gap-1.5 flex-wrap p-2 rounded-xl border border-border/50 bg-card min-h-[42px]">
-                  {draft.triggers.map((t) => (
-                    <span
-                      key={t}
-                      className="inline-flex items-center gap-1 text-[11.5px] px-2 py-0.5 rounded-full bg-primary/12 text-primary"
+          <SubSection
+            title="Triggers"
+            description="Keywords that let Megsy pick this skill automatically."
+          >
+            <SubCard>
+              <div className="flex gap-1.5 flex-wrap min-h-[34px] items-center">
+                {draft.triggers.map((t) => (
+                  <span
+                    key={t}
+                    className="inline-flex items-center gap-1 text-[11.5px] px-2.5 py-1 rounded-full bg-primary/12 text-primary"
+                  >
+                    {t}
+                    <button
+                      onClick={() => removeTrigger(t)}
+                      aria-label={`Remove ${t}`}
+                      className="hover:bg-primary/25 rounded-full p-0.5"
                     >
-                      {t}
-                      <button
-                        onClick={() => removeTrigger(t)}
-                        className="hover:bg-primary/25 rounded-full p-0.5"
-                      >
-                        <X className="w-2.5 h-2.5" />
-                      </button>
-                    </span>
-                  ))}
-                  <input
-                    value={triggerInput}
-                    onChange={(e) => setTriggerInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === ",") {
-                        e.preventDefault();
-                        addTrigger();
-                      }
-                    }}
-                    onBlur={addTrigger}
-                    placeholder="add keyword…"
-                    className="flex-1 min-w-[100px] bg-transparent outline-none text-[12.5px] px-1"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                  Instructions
-                </Label>
-                <Textarea
-                  rows={10}
-                  value={draft.body}
-                  onChange={(e) => setDraft({ ...draft, body: e.target.value })}
-                  className="font-mono text-[12px] leading-relaxed"
+                      <X className="w-2.5 h-2.5" />
+                    </button>
+                  </span>
+                ))}
+                <input
+                  value={triggerInput}
+                  onChange={(e) => setTriggerInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === ",") {
+                      e.preventDefault();
+                      addTrigger();
+                    }
+                  }}
+                  onBlur={addTrigger}
+                  placeholder="add keyword…"
+                  className="flex-1 min-w-[110px] bg-transparent outline-none text-[12.5px] px-1 text-[color:var(--mn-fg)] placeholder:text-[color:var(--mn-muted)]"
                 />
               </div>
+            </SubCard>
+          </SubSection>
 
-              <div className="space-y-1.5">
-                <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                  Tools
-                </Label>
-                <div className="grid grid-cols-2 gap-1.5">
-                  {SKILL_TOOLS.map((tool) => {
-                    const active = draft.enabled_tools.includes(tool.name);
-                    return (
-                      <button
-                        key={tool.name}
-                        onClick={() => toggleTool(tool.name)}
-                        className={`text-left p-2 rounded-lg border transition-all ${active ? "bg-primary/10 border-primary/50" : "border-border/40 hover:border-border bg-card"}`}
-                      >
-                        <div className="text-[12px] font-medium">{tool.label}</div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+          <SubSection title="Instructions" description="The system prompt Megsy follows for this skill.">
+            <SubCard flush>
+              <Textarea
+                rows={12}
+                value={draft.body}
+                onChange={(e) => setDraft({ ...draft, body: e.target.value })}
+                className="border-0 bg-transparent font-mono text-[12px] leading-relaxed resize-y focus-visible:ring-0 text-[color:var(--mn-fg)]"
+              />
+            </SubCard>
+          </SubSection>
 
-              <div className="space-y-1.5 pb-4">
-                <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                  Preferred model
-                </Label>
-                <select
-                  value={draft.preferred_model || "auto"}
-                  onChange={(e) => setDraft({ ...draft, preferred_model: e.target.value })}
-                  className="w-full h-10 rounded-xl border border-border/50 bg-card px-3 text-[13px] outline-none focus:border-primary/50"
-                >
-                  {SKILL_MODELS.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </>
-          )}
-        </aside>
-      </div>
+          <SubSection title="Tools" description="What this skill is allowed to use.">
+            <div className="grid grid-cols-2 gap-2">
+              {SKILL_TOOLS.map((tool) => {
+                const active = draft.enabled_tools.includes(tool.name);
+                return (
+                  <button
+                    key={tool.name}
+                    onClick={() => toggleTool(tool.name)}
+                    className={cn(
+                      "text-left px-3.5 py-3 rounded-[12px] text-[12.5px] font-medium transition-colors",
+                      active
+                        ? "bg-primary/12 text-primary"
+                        : "bg-[var(--mn-card)] text-[color:var(--mn-muted)]",
+                    )}
+                  >
+                    {tool.label}
+                  </button>
+                );
+              })}
+            </div>
+          </SubSection>
+
+          <SubSection title="Model" description="Leave on Auto unless this skill needs a specific model.">
+            <SubCard flush>
+              <select
+                value={draft.preferred_model || "auto"}
+                onChange={(e) => setDraft({ ...draft, preferred_model: e.target.value })}
+                className="w-full h-12 bg-transparent px-4 text-[13.5px] outline-none text-[color:var(--mn-fg)]"
+              >
+                {SKILL_MODELS.map((m) => (
+                  <option key={m.id} value={m.id} className="bg-background text-foreground">
+                    {m.label}
+                  </option>
+                ))}
+              </select>
+            </SubCard>
+          </SubSection>
+        </>
+      )}
+    </SubShell>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-[color:var(--mn-muted)]">
+        {label}
+      </Label>
+      {children}
     </div>
   );
 }
