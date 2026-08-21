@@ -6983,6 +6983,209 @@ export type Database = {
         }
         Relationships: []
       }
+      music_bot_state: {
+        Row: {
+          autopost_enabled: boolean
+          day_index: number
+          id: string
+          last_post_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          autopost_enabled?: boolean
+          day_index?: number
+          id?: string
+          last_post_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          autopost_enabled?: boolean
+          day_index?: number
+          id?: string
+          last_post_at?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      music_channel_posts: {
+        Row: {
+          day_index: number
+          id: string
+          image_url: string | null
+          message_id: number | null
+          posted_at: string
+          title: string
+        }
+        Insert: {
+          day_index: number
+          id?: string
+          image_url?: string | null
+          message_id?: number | null
+          posted_at?: string
+          title: string
+        }
+        Update: {
+          day_index?: number
+          id?: string
+          image_url?: string | null
+          message_id?: number | null
+          posted_at?: string
+          title?: string
+        }
+        Relationships: []
+      }
+      music_deepai_keys: {
+        Row: {
+          active: boolean
+          api_key: string
+          calls: number
+          created_at: string
+          disabled_reason: string | null
+          failures: number
+          id: string
+          label: string | null
+          last_used_at: string | null
+        }
+        Insert: {
+          active?: boolean
+          api_key: string
+          calls?: number
+          created_at?: string
+          disabled_reason?: string | null
+          failures?: number
+          id?: string
+          label?: string | null
+          last_used_at?: string | null
+        }
+        Update: {
+          active?: boolean
+          api_key?: string
+          calls?: number
+          created_at?: string
+          disabled_reason?: string | null
+          failures?: number
+          id?: string
+          label?: string | null
+          last_used_at?: string | null
+        }
+        Relationships: []
+      }
+      music_task_completions: {
+        Row: {
+          created_at: string
+          id: string
+          player_key: string
+          task_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          player_key: string
+          task_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          player_key?: string
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "music_task_completions_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "music_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      music_task_drafts: {
+        Row: {
+          draft: Json
+          telegram_id: number
+          updated_at: string
+        }
+        Insert: {
+          draft?: Json
+          telegram_id: number
+          updated_at?: string
+        }
+        Update: {
+          draft?: Json
+          telegram_id?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      music_task_requests: {
+        Row: {
+          amount_gram: number
+          created_at: string
+          id: string
+          player_key: string
+          status: string
+          tg_username: string | null
+          tx_hash: string | null
+        }
+        Insert: {
+          amount_gram?: number
+          created_at?: string
+          id?: string
+          player_key: string
+          status?: string
+          tg_username?: string | null
+          tx_hash?: string | null
+        }
+        Update: {
+          amount_gram?: number
+          created_at?: string
+          id?: string
+          player_key?: string
+          status?: string
+          tg_username?: string | null
+          tx_hash?: string | null
+        }
+        Relationships: []
+      }
+      music_tasks: {
+        Row: {
+          chat_id: string | null
+          created_at: string
+          id: string
+          image_url: string | null
+          is_active: boolean
+          link_url: string | null
+          reward: number
+          sort_order: number
+          title: string
+          verify: string
+        }
+        Insert: {
+          chat_id?: string | null
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          link_url?: string | null
+          reward?: number
+          sort_order?: number
+          title: string
+          verify?: string
+        }
+        Update: {
+          chat_id?: string | null
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          link_url?: string | null
+          reward?: number
+          sort_order?: number
+          title?: string
+          verify?: string
+        }
+        Relationships: []
+      }
       notification_preferences: {
         Row: {
           app_credits: boolean
@@ -13396,6 +13599,14 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      all_prize_broadcast_targets: {
+        Args: { _limit: number; _offset?: number }
+        Returns: {
+          first_name: string
+          id: string
+          telegram_id: number
+        }[]
+      }
       assert_model_access: { Args: { _model_id: string }; Returns: Json }
       attach_referral_for_telegram: {
         Args: { _code: string; _telegram_id: number }
@@ -14194,6 +14405,7 @@ export type Database = {
         }
         Returns: Json
       }
+      grant_prize_to_all: { Args: never; Returns: Json }
       grant_user_credits: {
         Args: {
           p_action_type: string
